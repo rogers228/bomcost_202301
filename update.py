@@ -2,7 +2,7 @@
 # 由server開發環境方能執行同步 
 # 開發資料夾 同步至server 以利工作站執行
 
-from tool.config import *
+from config import *
 import dirsync
 
 def main():
