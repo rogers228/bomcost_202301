@@ -17,6 +17,23 @@ class db_yst(): #讀取excel 單一零件
         df = pd.read_sql(s, self.cn) #轉pd
         return df if len(df.index) > 0 else None
 
+    def get_pur_ma002(self, ma001): # 供應商簡稱
+        s = "SELECT MA002 FROM PURMA WHERE MA001 = '{0}'"
+        s = s.format(ma001)
+        df = pd.read_sql(s, self.cn) #轉pd
+        return df.iloc[0]['MA002'] if len(df.index) > 0 else ''
+
+    def get_pd_one_to_dic(self, pdno):
+        s = """
+        SELECT TOP 1
+        RTRIM(MB001) AS MB001,MB002,MB003,MB025,MB032,MB050,MB010,MB011,MB053
+        FROM INVMB
+        WHERE MB001 = '{0}'
+        """
+        s = s.format(pdno)
+        df = pd.read_sql(s, self.cn) #轉pd
+        return df.iloc[0].to_dict() if len(df.index) > 0 else None
+
     def get_bom(self, pdno):
         s = """
             SELECT RTRIM(BOMMD.MD001) AS MD001,
@@ -72,11 +89,10 @@ class db_yst(): #讀取excel 單一零件
 
 def test1():
     db = db_yst()
-    # df = db.get_bom('4A306001')
-    # df = db.get_bmk('4A306001','01')
-    df = db.wget_imd('4A302019,4A302052')
-    
-    print(df)
+    # df = db.get_bom('4A302001')
+    # df = db.get_bmk('4A302001','01')
+    # print(df)
+    print(db.get_pur_ma002('1020010'))
 
 
 if __name__ == '__main__':

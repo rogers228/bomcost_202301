@@ -6,7 +6,6 @@ if True: # 固定引用開發環境 或 發佈環境 的 路徑
 import pandas as pd
 import tool_db_yst
 
-
 class BOM(): # 產生bom to_df() 方法
     def __init__(self, pdno, pump_lock = False):
         self.pdno = pdno #品號
@@ -99,6 +98,7 @@ class BOM(): # 產生bom to_df() 方法
         return df
 
     def bom_init(self): # 初始BOM
+        dic = self.db.get_pd_one_to_dic(self.pdno)
         self.df_bom = pd.DataFrame(None, columns = list(self.get_columns().keys())) # bom data
         data_row = {
             'gid':           0, # 件號id
@@ -109,22 +109,22 @@ class BOM(): # 產生bom to_df() 方法
             'bom_den':       1, #'底數',
             'bom_level':     0, #'階數',
             'bom_extend':    True, #'展階' True需要展階 False不需要展階
-            'pd_name':       '', #'品名',
-            'pd_spec':       '', #'規格',
-            'pd_type':       '', #'品號屬性',
-            'supply':        '', #'主供應商',
-            'last_price':    0, #'最新進價(本國幣別NTD)',
+            'pd_name':       dic['MB002'], #'品名',
+            'pd_spec':       dic['MB003'], #'規格',
+            'pd_type':       dic['MB025'], #'品號屬性',
+            'supply':        dic['MB032'], #'主供應商',
+            'last_price':    dic['MB050'], #'最新進價(本國幣別NTD)',
             'pid':           0, #'父件id',
             'child_quantity':0, #'子件數量',
             'root_quantity': 1, #'總用量',
-            'stant_mkpdno':  '', #'標準途程品號',
-            'stant_mkno':    '', #'標準途程代號',
+            'stant_mkpdno':  dic['MB010'], #'標準途程品號',
+            'stant_mkno':    dic['MB011'], #'標準途程代號',
             'cost_material': 0, #'材料費',
             'cost_make':     0, #'加工費',
             'cost_price':    0, #'單價',
             'cost_amount':   0, #'金額',
             'bom_type':      1, #'bom架構屬性', #1正常件 2材料件 3虛設件
-            'sales_price_1': 0, #'售價定價一',
+            'sales_price_1': dic['MB053'], #'售價定價一',
             }
         self.df_bom = self.df_bom.append(data_row, ignore_index=True) #新增首筆
 
@@ -223,28 +223,28 @@ class BOM(): # 產生bom to_df() 方法
                 self.df_bom.at[i,'last_price'] = 0  # 非採購件不抓取最新進價 故為0
                 self.df_bom.at[i,'supply'] = ''     # 非採購件不抓取主供應商 故為''
 
-
+    # def gid_bom_dic(self, gid):
+    #     df = self.df_bom
+    #     df_w = df.loc[df['gid']==gid]
+    #     return df_w.iloc[0].to_dict() if len(df_w.index) > 0 else None
+        
+    # def row_to_dic(self, pdno):
+    #     df = self.df_bom
+    #     df_w = df.loc[df['pdno']==pdno]
+    #     return df_w.iloc[0].to_dict() if len(df_w.index) > 0 else None
 
 def test1():
-    # db = tool_db_yst.db_yst()
-    # df = db.get_pd_test('4A306001')
-    # print(df)
-
     # bom = BOM('4A306001')
-    # bom = BOM('5A010100016')
+    # bom = BOM('4A306001')
     # bom = BOM('6AA03FA001EL1A01')
     bom = BOM('7AA01001A01', pump_lock = True)
-    
     df = bom.to_df()
-
     pd.set_option('display.max_rows', df.shape[0]+1) # 顯示最多列
     pd.set_option('display.max_columns', None) #顯示最多欄位
-    # df = df[['gid','pdno','pdorder','parent_pdno','pid','bom_level','child_quantity']]
-    # df = df[['gid','pdno','bom_level','bom_mol','bom_den','self_quantity','root_quantity']]
-    # df = df[['gid','pdno','pd_name','bom_type','last_price','supply']]
-    print(df)
-    # lis_columns = list(bom.get_columns().keys())
-    # print(lis_columns)
+    df1 = df[['gid','pdno', 'pid','bom_level']]
+    print(df1)
+
+
 
 
 if __name__ == '__main__':
