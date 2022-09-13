@@ -20,6 +20,13 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         self.comp_2() # 計算所有製程成本 rerutn  self.dic_bmk, self.dic_gid_pdno
         self.comp_3() # 檢查資料異常
 
+    def spec_md_dic(self):
+        # 特定製程必為特定單位
+        return {
+            '熱處理':     'KG',
+            '真空熱處理': 'KG',
+            '氮化處理':   'KG',
+            }
     def error_dic(self):
         return self.dic_err
 
@@ -153,6 +160,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         re_f = self.isRegMath_float # re 文字找數字
         pmd = self.dlookup_pdmd # 找換算單位
         pmd_tolist = self.dlookup_pdmd_tolist # 從 pdno 找所有換算單位
+        dic_spmd = self.spec_md_dic() #特定單位
 
         # step 1
         dic_msy = {} #　所有M,S,Y品號的產品製程
@@ -185,6 +193,8 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             'SS001': '製程單價',  # 該製程加工單位的單價  例如1KG多少錢 (非鼎新資料)
             'SS002': '單價',      # 該製程換算為PCS的單價 (非鼎新資料)            
             }
+
+        lis_err4 = [] # gid-mk_i 的string array
         for i, r in df.iterrows():
             # 宏觀的產品製程( 包含產品製程資料 及 採購資料)  to_df() 方法
             df_m = pd.DataFrame(None, columns = list(dic_columns.keys())) # None dataframe
@@ -198,33 +208,48 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                 }
                 df_m = df_m.append(dic_p, ignore_index=True)
 
+
             elif r['pd_type'] in 'MSY': # 品號屬性 M.自製件,S.託外加工件,Y.虛設品號
                 df_make = dic_msy[r['pdno']] # 該品號的製程
                 df_m = df_m.append(df_make, ignore_index = True)
 
                 # 檢查 3 有製程單位卻無換算單位
-                dic_err = {}
-                lis_err3 = []
+                dic_err3 = {}; lis_err3 = []
                 lis_pmd = pmd_tolist(r['pdno']) # 該品號所有換算單位
-                # print('lis_pmd:', lis_pmd)
                 df_w = df_make.loc[df_make['MF017']!='PCS'] # 非PCS的加工單為
+                lis_mk = []
                 if len(df_w.index) > 0:
                     lis_mk = list(set(df_w['MF017'].tolist())) # 該品號製程所有加工單位(不含PCS)
-                    # print('df_w_MF017_list:', lis_mk)
-                    # e 加工單位 沒有在換算單位
-                    lis_err3 = list(filter(lambda e: e not in lis_pmd, lis_mk))
-                    if len(lis_err3) > 0:
-                        dic_err[r['gid']] = lis_err3
+                lis_err3 = list(filter(lambda e: e not in lis_pmd, lis_mk))
+                if len(lis_err3) > 0:
+                    dic_err3[r['gid']] = lis_err3
+
+                # 檢查 4 特定製程的單位必為特定單位
+                for mk_i, mk_r in df_make.iterrows():
+                    if mk_r['MW002'] in list(dic_spmd.keys()):
+                        if dic_spmd[mk_r['MW002']] != mk_r['MF017']:
+                            lis_err4.append(f"{r['gid']}-{mk_i}")
+
+            elif r['pd_type'] in 'Q': # 不展BOM銷售件
+                dic_p = {
+                'MW002': '銷售', # 製程
+                'MF006': '', # 供應商代號
+                'MF007': 'YEOSEH', # 供應商簡稱'
+                'MF017': 'PCS', # 加工單位
+                'MF018': r['sales_price_1'] # 最新進價(本國幣別NTD)
+                }
+                df_m = df_m.append(dic_p, ignore_index=True)
 
             dic_all[r['pdno']] = df_m
-        self.dic_err['err3'] = dic_err
+        self.dic_err['err3'] = dic_err3
+        self.dic_err['err4'] = lis_err4
 
         # step 3 清洗 複製 SS001, SS002
         dic_all_new = {}
         for pdno, df_s in dic_all.items():
             df_new = df_s.copy()
             for i, r in df_s.iterrows():
-                if r['MW002'] == '採購':
+                if r['MW002'] in ['採購','銷售']:
                     f_ss001 = r['MF018']
                 else:
                     # 製造加工
@@ -264,18 +289,13 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         # df1 = df[['gid','pdno', 'pid','bom_level']]
         # print(df1)
         
-        #檢查 1 最下階應為P件，或應再建立P件為子件
-        arr_bottom = array.array('i') #最下階的gid
-        for i, r in df.iterrows():
-            if i == len(df.index)-1:
-                arr_bottom.append(r['gid']) # 最尾必為最下階
-            else:
-                if r['bom_level'] >= df.iloc[i+1]['bom_level']:
-                    arr_bottom.append(r['gid']) # 本階層 大於等於 下一筆的階層 必為最下階
+        #檢查 1 最下階應為P, Q件，或應再建立P件為子件
         lis_err1 = []
-        for gid in arr_bottom:
-            if df.loc[df['gid']==gid]['pd_type'].item() != 'P':
-                lis_err1.append(gid)
+        df_w = df.loc[(df['bom_level_lowest'] == True) & 
+            (df['pd_type'] != 'P') & (df['pd_type'] != 'Q')] # P件 且 子件數量大於0
+        # print(df_w)
+        if len(df_w.index) > 0:
+            lis_err1 = df_w['gid'].tolist()
         self.dic_err['err1'] = lis_err1
         
         #檢查 2 P件不應該有BOM架構，或有BOM應為S件or M件
@@ -286,7 +306,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         self.dic_err['err2'] = lis_err2
 
 def test1():
-    bom = COST('5A090100005')
+    bom = COST('4A306019')
     print(bom.error_dic())
     # bom = COST('7AA01001A01')
     # print(bom.dlookup_bmk_pdno('5A090100005'))

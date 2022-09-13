@@ -27,7 +27,9 @@ class Report_bcs01(tool_excel):
             sys.exit() #正式結束程式
         self.file_tool.clear(self.report_name) # 清除舊檔
         self.bcs = tool_cost.COST(self.pdno, self.pump_lock) # data
-        print(self.bcs.error_dic())
+        self.dic_spmd = self.bcs.spec_md_dic() #特定單位
+        # print(self.bcs.error_dic())
+
         self.create_excel()  # 建立
         self.output()
         self.save_xls()
@@ -47,6 +49,7 @@ class Report_bcs01(tool_excel):
         if True: # style, func
             f11 = font_11; f10 = font_10
             # func, method
+            err_dic = self.bcs.error_dic()
             write = self.c_write
             gid = self.bcs.dlookup_gid     # bom品號資料
             md = self.bcs.dlookup_pdmd     # 單位換算
@@ -82,7 +85,8 @@ class Report_bcs01(tool_excel):
                 if pdno_idx ==0:
                     cr_pd = cr #紀錄位置 首個cr_pd
                     # image
-                    self.c_image2(cr, 1, pdno,0.1,0.3)
+                    max_height = 58 if gid(v,'bom_level_lowest') == True else 116
+                    self.c_image2(cr, 1, pdno ,0.1,0.4,max_height=max_height)
 
                 write(cr, 3, gid(v,'pd_name'), f11, alignment=ah_wr) # 品名
                 
@@ -104,15 +108,12 @@ class Report_bcs01(tool_excel):
                 # 產品製程
                 crm -= 1
                 df_mk = mk(pdno) # 產品製程 dataframe
-                # print('pdno:', pdno)
-                # print(df_mk.dtypes)
                 for mk_i, mk_r in df_mk.iterrows():
                     crm+=1; write(crm, 4, mk_r['MF006'], f11) # 廠商代號 
                     write(crm, 5, mk_r['MF007'], f11) # 簡稱
                     write(crm, 6, mk_r['MW002'], f11, alignment=ah_wr) # 製程
                     write(crm, 7, mk_r['MF017'], f11) # 加工單位
-                    # print(mk_r['SS001'])
-                    # print('test123')
+
                     write(crm, 8, float(mk_r['SS001']), f11, alignment=ah_right) # 製程單價(後製資料), 抓取順序1.備註 2.加工單價
                     
                     # 單價 =   製程單價(加工單價*單位換算)  * 用量換算率(用量/底數)
@@ -124,12 +125,20 @@ class Report_bcs01(tool_excel):
                     write(crm, 12, mk_r['F_MF024'], f11) # 固定機時
                     price += price_mol_den # 總單價
 
-                    # 檢查
+                    # 檢查 單價為0
                     if price_mol_den == 0:
                         self.c_fill(crm, 8); self.c_fill(crm, 9)
+
+                    # 檢查 加工單位 非 固定單位
+                    if f"{v}-{mk_i}" in err_dic['err4']:
+                        self.c_fill(crm, 7); self.c_comm(crm, 7, f"{mk_r['MW002']}加工單位應為 {self.dic_spmd[mk_r['MW002']]}")
+
                 # 檢查
-                if v in self.bcs.error_dic()['err1']:
-                    self.c_fill(cr_pd, 3); self.c_comm(cr_pd, 3, '最下階應為P件，或應再建立P件為子件')
+                if v in err_dic['err1']:
+                    self.c_fill(cr_pd+2,3); self.c_comm(cr_pd+2,3, '最下階應為P件，或應再建立P件為子件')
+
+                if v in err_dic['err2']:
+                    self.c_fill(cr_pd+2,3); self.c_comm(cr_pd+2,3, 'P件不應該有BOM架構，或有BOM應為S件or M件')
 
                 cr = max(cr, crm)
                 # 群組底
@@ -149,8 +158,10 @@ class Report_bcs01(tool_excel):
 def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
     # Report_bcs01(fileName, '5A110100005')
-    Report_bcs01(fileName, '5F00001')
+    # Report_bcs01(fileName, '4A306019')
+    # Report_bcs01(fileName, '5F00001')
     # Report_bcs01(fileName, '6AA03JA001AL1A01')
+    Report_bcs01(fileName, '7AA01001A01', True)
     print('ok')
 
 if __name__ == '__main__':

@@ -45,6 +45,7 @@ class BOM(): # 產生bom to_df() 方法
             'cost_amount':   '金額',
             'bom_type':      'bom架構屬性', #1正常件 2材料件 3虛設件
             'sales_price_1': '售價定價一',
+            'bom_level_lowest': '最底階', # True False
         }
 
     def get_pdbom_df(self, pdno, bom_level):
@@ -71,17 +72,11 @@ class BOM(): # 產生bom to_df() 方法
             }
         df = df.rename(columns=new_columns)
 
-        bom_extend = True #'展階' 預設尚未展階 故為True需要展階
-        if all([self.pump_lock == True, # 泵浦鎖定 True 不展階
-            bom_level > 0,        # 不可為0階
-            pdno[:3] == '6AA'],):
-            bom_extend = False
-
         # 以預設值加入df
         columns_value = {
             'gid':           0, # 件號id
             'bom_level':     bom_level + 1, #'階數  為本階+1',
-            'bom_extend':    bom_extend, #'展階' 預設尚未展階 故為True需要展階
+            'bom_extend':    True, #'展階' 預設尚未展階 故為True需要展階
             'pid':           0, #'父件id',
             'child_quantity':0, #'子件數量(筆數)',
             'self_quantity': 0, #'自身總用量',
@@ -91,10 +86,20 @@ class BOM(): # 產生bom to_df() 方法
             'cost_price':    0, #'單價',
             'cost_amount':   0, #'金額',
             'bom_type':      1, #'bom架構屬性', #1正常件 2材料件 3虛設件
+            'bom_level_lowest': False, #'最底階' True False
             }
 
         for k, v in columns_value.items():
             df.insert(len(df.columns), k, [v]*len(df.index), True) #插在最後
+
+        # pump lock 不展bom功能
+        if self.pump_lock == True:
+            # 找出吻合的pump 設定為不展階
+            df_w = df.loc[(df['bom_level']>0) & (df['pdno'].str.contains(r'^6AA.*'))]
+            if len(df_w.index) > 0:
+                for i, r in df_w.iterrows():
+                    df.at[i,'bom_extend'] = False # 不展BOM
+                    df.at[i,'pd_type'] = 'Q' # 改為Q 不展BOM銷售件
         return df
 
     def bom_init(self): # 初始BOM
@@ -125,6 +130,7 @@ class BOM(): # 產生bom to_df() 方法
             'cost_amount':   0, #'金額',
             'bom_type':      1, #'bom架構屬性', #1正常件 2材料件 3虛設件
             'sales_price_1': dic['MB053'], #'售價定價一',
+            'bom_level_lowest': False, #'最底階' True False
             }
         self.df_bom = self.df_bom.append(data_row, ignore_index=True) #新增首筆
 
@@ -223,15 +229,16 @@ class BOM(): # 產生bom to_df() 方法
                 self.df_bom.at[i,'last_price'] = 0  # 非採購件不抓取最新進價 故為0
                 self.df_bom.at[i,'supply'] = ''     # 非採購件不抓取主供應商 故為''
 
-    # def gid_bom_dic(self, gid):
-    #     df = self.df_bom
-    #     df_w = df.loc[df['gid']==gid]
-    #     return df_w.iloc[0].to_dict() if len(df_w.index) > 0 else None
-        
-    # def row_to_dic(self, pdno):
-    #     df = self.df_bom
-    #     df_w = df.loc[df['pdno']==pdno]
-    #     return df_w.iloc[0].to_dict() if len(df_w.index) > 0 else None
+        # bom_level_lowest 最底階 True False
+        df = self.df_bom.copy()
+        for i, r in df.iterrows():
+            if i == len(df.index)-1:
+                self.df_bom.at[i,'bom_level_lowest'] = True  # 最尾必為最下階
+                # arr_bottom.append(r['gid']) # 最尾必為最下階
+            else:
+                if r['bom_level'] >= df.iloc[i+1]['bom_level']:
+                    self.df_bom.at[i,'bom_level_lowest'] = True  # 本階層 大於等於 下一筆的階層 必為最下階
+                    # arr_bottom.append(r['gid']) # 本階層 大於等於 下一筆的階層 必為最下階
 
 def test1():
     # bom = BOM('4A306001')
@@ -241,7 +248,7 @@ def test1():
     df = bom.to_df()
     pd.set_option('display.max_rows', df.shape[0]+1) # 顯示最多列
     pd.set_option('display.max_columns', None) #顯示最多欄位
-    df1 = df[['gid','pdno', 'pid','bom_level']]
+    df1 = df[['gid','pdno', 'pid','bom_level','bom_extend','pd_type','sales_price_1']]
     print(df1)
 
 

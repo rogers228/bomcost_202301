@@ -92,14 +92,14 @@ class tool_excel(): #讀取excel 單一零件
         img.anchor = OneCellAnchor(_from=marker, ext=size) #img 定位
         self.sh.add_image(img)
 
-    def c_image2(self, row, column, pdno, rowoffset=0, coloffset=0): #插入圖片
+    def c_image2(self, row, column, pdno, rowoffset=0, coloffset=0, max_height=80): #插入圖片
         imgfullpath = (os.path.join(config_image_dir, f'{pdno}.bmp'))
         # print(imgfullpath)
         if not os.path.isfile(imgfullpath): # 無此檔案
             return
 
         # step 1 求縮圖尺寸 
-        max_width, max_height = 80, 80
+        max_width  = 80
         f_height = lambda w,h: int((max_width*h)/w) # 依照 max_width 求等比 height
         f_width = lambda w,h: int((max_height*w)/h) # 依照 max_height 求等比 width
         (w, h) = pil_image.open(imgfullpath).size
@@ -132,8 +132,9 @@ class tool_excel(): #讀取excel 單一零件
         for i in range(start_column, start_column + columns):
             self.sh.cell(row, i).border = border #style
 
-    def c_comm(self, row, column, comment):
+    def c_comm(self, row, column, message):
         #註解
+        comment = Comment(message, "Author")
         self.sh.cell(row, column).comment = comment
 
     def c_fill(self, row, column, fillcolor = cf_yellow):
