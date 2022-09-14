@@ -75,7 +75,7 @@ class tool_excel(): #讀取excel 單一零件
             # ORIENTATION_PORTRAIT = 'portrait' #縱向
             # ORIENTATION_LANDSCAPE = 'landscape' #横向
         self.sh.sheet_view.zoomScale = 100 # 檢視縮放
-        self.sh.page_setup.scale = 82      # 列印縮放比例
+        self.sh.page_setup.scale = 75      # 列印縮放比例
         self.sh.print_options.horizontalCentered=True # 水平居中
 
     def c_image(self, row, column, imgPath, width, height, rowoffset=0, coloffset=0): #插入圖片
