@@ -159,9 +159,9 @@ def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
     # Report_bcs01(fileName, '5A110100005')
     # Report_bcs01(fileName, '4A306019')
-    # Report_bcs01(fileName, '5F00001')
+    Report_bcs01(fileName, '5A010100005')
     # Report_bcs01(fileName, '6AA03JA001AL1A01')
-    Report_bcs01(fileName, '7AA01001A01', True)
+    # Report_bcs01(fileName, '7AA01001A01', True)
     print('ok')
 
 if __name__ == '__main__':

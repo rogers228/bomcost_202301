@@ -42,6 +42,9 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         # 4A306025  KG     4.160    1.0
         result = ''
         df = self.df_md
+        if df is None:
+            return result
+            
         if pdno in df['MD001'].tolist():
             result = df.loc[df['MD001']==pdno][column].item()
         return result
@@ -50,6 +53,8 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         # 從 pdno 找所有換算單位
         result = []
         df = self.df_md
+        if df is None:
+            return result
         df_w = df.loc[df['MD001']==pdno]
         if len(df_w.index)> 0:
             result = df_w['MD002'].tolist()
@@ -306,7 +311,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         self.dic_err['err2'] = lis_err2
 
 def test1():
-    bom = COST('4A306019')
+    bom = COST('5A010100005')
     print(bom.error_dic())
     # bom = COST('7AA01001A01')
     # print(bom.dlookup_bmk_pdno('5A090100005'))
