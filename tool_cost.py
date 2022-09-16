@@ -198,6 +198,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             'SS001': '製程單價',  # 該製程加工單位的單價  例如1KG多少錢 (非鼎新資料)
             'SS002': '單價',      # 該製程換算為PCS的單價 (非鼎新資料)            
             }
+        lis_columns = list(dic_columns.keys())
 
         lis_err4 = [] # gid-mk_i 的string array
         for i, r in df.iterrows():
@@ -211,12 +212,12 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                 'MF017': 'PCS', # 加工單位
                 'MF018': r['last_price'] # 最新進價(本國幣別NTD)
                 }
-                df_m = df_m.append(dic_p, ignore_index=True)
-
+                df_m = df_m.append(dic_p, ignore_index=True) # 20220915
 
             elif r['pd_type'] in 'MSY': # 品號屬性 M.自製件,S.託外加工件,Y.虛設品號
                 df_make = dic_msy[r['pdno']] # 該品號的製程
-                df_m = df_m.append(df_make, ignore_index = True)
+                df_m = df_m.append(df_make, ignore_index = True) # 20220915
+
 
                 # 檢查 3 有製程單位卻無換算單位
                 dic_err3 = {}; lis_err3 = []

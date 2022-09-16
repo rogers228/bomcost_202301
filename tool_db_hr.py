@@ -4,14 +4,18 @@ if True: # 固定引用開發環境 或 發佈環境 的 路徑
     sys.path.append(config_path)
     
 import pandas as pd
-import pyodbc
+# import pyodbc
+from sqlalchemy.engine import URL
+from sqlalchemy import create_engine
 from config import *
 
 class db_hr(): #讀取excel 單一零件
     def __init__(self):
-        self.cn = pyodbc.connect(config_conn_HR) # connect str 連接字串
-        self.rpt = pyodbc.connect(config_conn_RPT) # connect str 連接字串
-
+        # self.cn = pyodbc.connect(config_conn_HR) # connect str 連接字串
+        # self.rpt = pyodbc.connect(config_conn_RPT) # connect str 連接字串
+        self.cn = create_engine(URL.create('mssql+pyodbc', query={'odbc_connect': config_conn_HR})).connect()
+        self.rpt = create_engine(URL.create('mssql+pyodbc', query={'odbc_connect': config_conn_RPT})).connect()
+        
     def ps18Getps01(self, ps18): #使用者電腦名稱 查詢 使用者代號
         s = "SELECT TOP 1 ps01 FROM rec_ps WHERE ps18 = '{0}'"
         s = s.format(ps18)

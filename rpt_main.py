@@ -8,6 +8,9 @@ import click
 import tool_auth
 import rpt_bcs01
 
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning) # 抑制未來警告
+
 @click.command() # 命令行入口
 @click.option('-report_name', help='report name', required=True, type=str) # required 必要的
 @click.option('-pdno', help='product no.', required=True, type=str) # required 必要的
@@ -15,6 +18,7 @@ import rpt_bcs01
 def main(report_name, pdno, pump_lock= False):
     au = tool_auth.Authorization()
     if not au.isqs(12): # 檢查 12 權限
+        click.echo('無權限!')
         return # 無權限 退出
 
     filename = report_name + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'

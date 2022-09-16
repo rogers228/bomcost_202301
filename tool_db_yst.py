@@ -4,12 +4,15 @@ if True: # 固定引用開發環境 或 發佈環境 的 路徑
     sys.path.append(config_path)
 
 import pandas as pd
-import pyodbc
+# import pyodbc
+from sqlalchemy.engine import URL
+from sqlalchemy import create_engine
 from config import *
 
 class db_yst(): #讀取excel 單一零件
     def __init__(self):
-        self.cn = pyodbc.connect(config_conn_YST) # connect str 連接字串\
+        # self.cn = pyodbc.connect(config_conn_YST) # connect str 連接字串\
+        self.cn = create_engine(URL.create('mssql+pyodbc', query={'odbc_connect': config_conn_YST})).connect()
 
     def get_pd_test(self, pdno):
         s = "SELECT MB001,MB002,MB003 FROM INVMB WHERE MB001 = '{0}'"

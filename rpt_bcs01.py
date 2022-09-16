@@ -11,7 +11,6 @@ from tool_style import *
 import tool_file
 import tool_cost
 import tool_db_yst
-
 from config import *
 
 class Report_bcs01(tool_excel):
@@ -171,8 +170,8 @@ class Report_bcs01(tool_excel):
 
 def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
-    Report_bcs01(fileName, '4A3060198')
-    # Report_bcs01(fileName, '5A110100015')
+    # Report_bcs01(fileName, '4A306019')
+    Report_bcs01(fileName, '5A110100015')
     # Report_bcs01(fileName, '6AA03JA001AL1A01')
     # Report_bcs01(fileName, '7AA01001A01', True)
     print('ok')
