@@ -21,7 +21,7 @@ class tool_excel(): #讀取excel 單一零件
         self.workbook = workbook
         self.sh = sh # excel sheet
 
-    def c_write(self, row, column, value = '', font = font_9, alignment = ah_left, border = no_border, fillcolor = cf_none):
+    def c_write(self, row, column, value = '', font = font_9, alignment = ah_left, border = no_border, fillcolor = cf_none, number_format='General'):
         #寫入儲存格 並設定格式
         cell = self.sh.cell(row, column)
         cell.value = value
@@ -33,6 +33,8 @@ class tool_excel(): #讀取excel 單一零件
             cell.border = border
         if fillcolor:
             cell.fill = fillcolor
+        if number_format:
+            cell.number_format = number_format
 
     def c_merge(self, start_row, start_column, end_row, end_column):
         self.sh.merge_cells(start_row=start_row, start_column=start_column, end_row=end_row, end_column=end_column) #合併儲存格
@@ -75,7 +77,7 @@ class tool_excel(): #讀取excel 單一零件
             # ORIENTATION_PORTRAIT = 'portrait' #縱向
             # ORIENTATION_LANDSCAPE = 'landscape' #横向
         self.sh.sheet_view.zoomScale = 100 # 檢視縮放
-        self.sh.page_setup.scale = 75      # 列印縮放比例
+        self.sh.page_setup.scale = 70      # 列印縮放比例
         self.sh.print_options.horizontalCentered=True # 水平居中
 
     def c_image(self, row, column, imgPath, width, height, rowoffset=0, coloffset=0): #插入圖片

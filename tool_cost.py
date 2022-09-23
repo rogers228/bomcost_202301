@@ -362,6 +362,9 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                             f_ss031 = 0
 
                         st_mf003 = stmk(r['MF006'], r['MF004']) # 標準廠商加工單價
+                        # print('MF006:', r['MF006'])
+                        # print('MF004:', r['MF004'])
+                        # print('st_mf003:', st_mf003)
                         if st_mf003: # 有標準廠商加工單價
                             if f_ss001 != st_mf003: # 不符合標準廠商加工單價
                                 dic_err6_tmp['mk_i'] = i
@@ -438,7 +441,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         self.dic_err['err2'] = lis_err2
 
 def test1():
-    bom = COST('4A401056')
+    bom = COST('4A404011')
     # bom = COST('6AA0602800300002', pump_lock = True)
     print(bom.error_dic())
 

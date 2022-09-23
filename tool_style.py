@@ -42,6 +42,8 @@ if True: # font
     font_A_10I = Font(name = "Arial" ,size = "10", italic=True)
     font_A_10G = Font(name = "Arial" ,size = "10", color='cccccc')
     font_10B = Font(size = "10", bold=True)
+    font_9_Calibri = Font(size = "9", name='Calibri')
+    font_9_Calibri_g = Font(size = "9", name='Calibri', color='cccccc')
     font_10_Calibri = Font(size = "10", name='Calibri')
     font_10_Calibri_g = Font(size = "10", name='Calibri', color='cccccc')
     font_11 = Font(size = "11")

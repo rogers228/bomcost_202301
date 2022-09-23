@@ -11,6 +11,7 @@ from tool_style import *
 import tool_file
 import tool_cost
 import tool_db_yst
+from tool_func import is_dec
 from config import *
 
 class Report_bcs01(tool_excel):
@@ -62,12 +63,13 @@ class Report_bcs01(tool_excel):
         lis_base = []; a = lis_base.append
         a('序號,    15,  none') 
         a('品號,    15,  none')
-        a('品名規格, 32, none') 
+        a('品名規格, 38, none') 
         a('廠商,     8, MF006') 
-        a('簡稱,    12, MF007') 
+        a('簡稱,    12, MF007')
+        a('製號,     6, MF004')
         a('製程,    17, MW002') 
         a('製程敘述,15, MF008') 
-        a('單位,    5, MF017') 
+        a('單位,    6, MF017') 
         a('製程單價, 10, SS001') 
         a('單價,      7, SS002') 
         a('工時批量,   10, MF019') 
@@ -76,7 +78,7 @@ class Report_bcs01(tool_excel):
         a('總用量,     9, none') 
         a('總單價,    9,  none') 
         a('金額,      9,  none') 
-        a('試算,      9,  none') 
+        a('試算,     14,  none') 
         lis_e1, lis_e2, lis_e3 = [],[],[]
         for e in lis_base:
             [e1, e2, e3]= e.split(',')
@@ -89,7 +91,7 @@ class Report_bcs01(tool_excel):
     def output(self):
         caption = 'BOM製程成本表' # 標題
         if True: # style, func
-            f10g =font_10_Calibri_g
+            f9g =font_9_Calibri_g
             f10 = font_10_Calibri
             f11 = font_11_Calibri
             f11gr = font_11_Calibri_green
@@ -99,12 +101,14 @@ class Report_bcs01(tool_excel):
             bmr = self.bcs.dlookup_gid     # bom品號資料
             md = self.bcs.dlookup_pdmd     # 單位換算
             mk = self.bcs.dlookup_bmk_pdno # 產品製程
+            # number_format
+            nf_total = '$#,##0.0'
 
-        x_index = self.xls_index
+        x_i = self.xls_index
         x_width = self.xls_width
         x_sqlcn = self.xls_sqlcn
         cr=1; column_w(list(x_width.values())) # 設定欄寬
-        for name, index in x_index.items():
+        for name, index in x_i.items():
             write(cr, index, name, f11, alignment=ah_wr, border=bt_border, fillcolor=cf_gray) # 欄位名稱
 
         total = 0 # 試算
@@ -112,98 +116,98 @@ class Report_bcs01(tool_excel):
         lis_group = self.bcs.group_to_list()
         for group_idx, lis_gid in enumerate(lis_group):
             price = 0 # 總單價
-            cr+=1; write(cr, x_index['序號'], group_idx+1, f11) # 序號
+            cr+=1; write(cr, x_i['序號'], group_idx+1, f11) # 序號
             cr-=1
             for pdno_idx, gid in enumerate(lis_gid):
                 pdno = bmr(gid,'pdno')
-                cr+=1; write(cr, x_index['品號'], pdno, f10, alignment=ah_wr) # 品號 
+                cr+=1; write(cr, x_i['品號'], pdno, f10, alignment=ah_wr) # 品號 
                 crm = cr  # 紀錄位置 crm
                 # 自身總用量 self_quantity
                 if pdno_idx == 0:
                     quantity = float(bmr(gid,'self_quantity'))
-                    write(cr, x_index['總用量'], quantity, f11, alignment=ahr) # 自身總用量
+                    write(cr, x_i['總用量'], quantity, f11, alignment=ahr) # 自身總用量
 
                 if pdno_idx ==0:
                     cr_pd = cr #紀錄位置 首個cr_pd
                     max_height = 58 if bmr(gid,'bom_level_lowest') == True else 116
                     img(cr, 1, pdno ,0.1,0.4,max_height=max_height)           # img
-                cr+=1; write(cr, x_index['品號'], gid, f10g, alignment=ahr)     # gid
-
+                cr+=1; write(cr, x_i['品號'], gid, f9g, alignment=ahr)     # gid
                 cr-=1
-                cr+=0; write(cr, x_index['品名規格'], bmr(gid,'pd_name'), f11, alignment=ah_wr) # 品名
-                cr+=1; write(cr, x_index['品名規格'], bmr(gid,'pd_spec'), f11, alignment=ah_wr) # 規格
+                cr+=0; write(cr, x_i['品名規格'], bmr(gid,'pd_name'), f11, alignment=ah_wr) # 品名
+                cr+=1; write(cr, x_i['品名規格'], bmr(gid,'pd_spec'), f11, alignment=ah_wr) # 規格
                 mol_den = float(bmr(gid,'bom_mol')/bmr(gid,'bom_den'))       # 用量換算率
-                cr+=1; write(cr, x_index['品名規格'], self.fmat_1(gid), f10)  # x階(x件),用量/底數
+                cr+=1; write(cr, x_i['品名規格'], self.fmat_1(gid), f10)  # x階(x件),用量/底數
                 if md(pdno,'MD002') != '':
-                    tmpstr = f"{md(pdno,'MD003')}/{md(pdno,'MD004')}{md(pdno,'MD002')}"
-                    cr+=1; write(cr, x_index['品名規格'], tmpstr, f10) #換算單位 0.5 /1.0 KG
+                    # tmpstr = f"{md(pdno,'MD003')}/{md(pdno,'MD004')}{md(pdno,'MD002')}"
+                    cr+=1; write(cr, x_i['品名規格'], self.fmat_md(pdno), f10) #換算單位 0.5KG /1.0PCS
 
                 # 產品製程
                 crm -= 1
                 df_mk = mk(pdno) # 產品製程 dataframe
                 for mk_i, mk_r in df_mk.iterrows():
                     crm+=1;
-                    sn='廠商';    write(crm, x_index[sn], mk_r[x_sqlcn[sn]], f10g)
-                    sn='簡稱';    write(crm, x_index[sn], mk_r[x_sqlcn[sn]], f11)
-                    sn='製程';    write(crm, x_index[sn], mk_r[x_sqlcn[sn]], f11, alignment=ah_wr)
-                    sn='製程敘述'; write(crm, x_index[sn], mk_r[x_sqlcn[sn]], f10, alignment=ah_wr)
-                    sn='單位';     write(crm, x_index[sn], mk_r[x_sqlcn[sn]], f11)
-                    sn='製程單價'; write(crm, x_index[sn], mk_r[x_sqlcn[sn]], f11, alignment=ahr)
+                    sn='廠商';    write(crm, x_i[sn], mk_r[x_sqlcn[sn]], f9g)
+                    sn='簡稱';    write(crm, x_i[sn], mk_r[x_sqlcn[sn]], f11)
+                    sn='製號';    write(crm, x_i[sn], mk_r[x_sqlcn[sn]], f9g)
+                    sn='製程';    write(crm, x_i[sn], mk_r[x_sqlcn[sn]], f11, alignment=ah_wr)
+                    sn='製程敘述'; write(crm, x_i[sn], mk_r[x_sqlcn[sn]], f10, alignment=ah_wr)
+                    sn='單位';     write(crm, x_i[sn], mk_r[x_sqlcn[sn]], f11)
+                    sn='製程單價'; write(crm, x_i[sn], mk_r[x_sqlcn[sn]], f11, alignment=ahr)
                     # 單價 =   製程單價(加工單價*單位換算)  * 用量換算率(用量/底數)
                     price_mol_den = float(mk_r['SS002']) * min(mol_den, 1) # 小於1時應換算(取最小且最大為1)
-                    sn='單價';    write(crm, x_index[sn], price_mol_den, f11, alignment=ahr)
-                    sn='工時批量'; write(crm, x_index[sn], mk_r[x_sqlcn[sn]], f11, alignment=ahr)
+                    sn='單價';    write(crm, x_i[sn], price_mol_den, f11, alignment=ahr)
+                    sn='工時批量'; write(crm, x_i[sn], mk_r[x_sqlcn[sn]], f11, alignment=ahr)
                     if mk_r['MF005'] == '1': # 自製
-                        sn='固定人時';v=mk_r[x_sqlcn[sn]];v=str(v).replace('00:00:00','');v=v.replace('nan','');write(crm,x_index[sn],v,f11)
-                        sn='固定機時';v=mk_r[x_sqlcn[sn]];v=str(v).replace('00:00:00','');v=v.replace('nan','');write(crm,x_index[sn],v,f11)
+                        sn='固定人時';v=mk_r[x_sqlcn[sn]];v=str(v).replace('00:00:00','');v=v.replace('nan','');write(crm,x_i[sn],v,f11)
+                        sn='固定機時';v=mk_r[x_sqlcn[sn]];v=str(v).replace('00:00:00','');v=v.replace('nan','');write(crm,x_i[sn],v,f11)
                     price += price_mol_den # 總單價
                     # debug
                     # write(crm, 18, mk_r['SS031'], f11) # 托外最新進價
 
                     # 檢查 單價為0
                     if price_mol_den == 0:
-                        fill(crm, 9); fill(crm, 10)
+                        sn='製程單價'; fill(crm, x_i[sn])
+                        sn='單價';    fill(crm, x_i[sn])
 
                     # 檢查 已有最新托外進價
                     if pdno in list(err_dic['err5'].keys()):
                         if err_dic['err5'][pdno]['mk_i'] == mk_i:
-                            fill(crm, 9, fillcolor=cf_khaki); comm(crm, 9, err_dic['err5'][pdno]['mssage'])
+                            sn='製程單價'; cj=x_i[sn]; fill(crm, cj, fillcolor=cf_khaki); comm(crm, cj, err_dic['err5'][pdno]['mssage'])
 
                     # 檢查 不吻合 標準廠商加工單價
                     if pdno in list(err_dic['err6'].keys()):
                         if err_dic['err6'][pdno]['mk_i'] == mk_i:
-                            fill(crm, 9); comm(crm, 9, err_dic['err6'][pdno]['mssage'])
+                            sn='製程單價'; cj=x_i[sn]; fill(crm, cj); comm(crm, cj, err_dic['err6'][pdno]['mssage'])
 
                     # 檢查 不吻合 標準途程加工單位
                     if pdno in list(err_dic['err7'].keys()):
                         if err_dic['err7'][pdno]['mk_i'] == mk_i:
-                            fill(crm, 8); comm(crm, 8, err_dic['err7'][pdno]['mssage'])
+                            sn='單位'; cj=x_i[sn]; fill(crm, cj); comm(crm, cj, err_dic['err7'][pdno]['mssage'])
 
                 # 檢查
                 if gid in err_dic['err1']:
-                    fill(cr_pd+2,3); comm(cr_pd+2,3, '最下階應為P件，或應再建立P件為子件')
+                    sn='品名規格'; cj=x_i[sn]; fill(cr_pd+2,cj); comm(cr_pd+2,cj, '最下階應為P件，或應再建立P件為子件')
 
                 if gid in err_dic['err2']:
-                    fill(cr_pd+2,3); comm(cr_pd+2,3, 'P件不應該有BOM架構，或有BOM應為S件or M件')
+                    sn='品名規格'; cj=x_i[sn]; fill(cr_pd+2,cj); comm(cr_pd+2,cj, 'P件不應該有BOM架構，或有BOM應為S件or M件')
 
                 cr = max(cr, crm)
                 # 群組底
                 if pdno_idx == len(lis_gid)-1:
-                    self.c_line_border(cr,1,17,border=bottom_border) # 畫線
+                    self.c_line_border(cr,1,len(x_i.keys()),border=bottom_border) # 畫線
 
-            price=float(f'{price:0.2f}')
-            v=f'{price:0.2f}'; v=v.rstrip('0'); v=v.rstrip('.')
-            sn='總單價'; write(cr_pd, x_index[sn], v, f11, alignment=ahr)
+            price=float(f'{price:0.3f}') # 強制取小數至3位數即停
+            nf = '0.##' if is_dec(price) else 'General'
+            sn='總單價'; write(cr_pd, x_i[sn], price, f11, alignment=ahr, number_format=nf)
 
-            money=float(f'{price*quantity:0.2f}')
-            v=f'{money:0.2f}'; v=v.rstrip('0'); v=v.rstrip('.')
-            sn='金額'; write(cr_pd, x_index[sn], v, f11, alignment=ahr) 
+            money=price*quantity
+            nf = '0.##' if is_dec(price) else 'General'
+            sn='金額'; write(cr_pd, x_i[sn], money, f11, alignment=ahr, number_format=nf) 
 
-            total+=money; v=f'{total:,.1f}'
-            v=v.rstrip('0'); v=v.rstrip('.') 
-            sn='試算'; write(cr_pd, x_index[sn], v, f11gr, alignment=ahr) 
+            total+=money
+            sn='試算'; write(cr_pd, x_i[sn], total, f11gr, alignment=ahr, number_format=nf_total) 
 
-        cr+=1; write(cr, 1, '-結束- 以下空白', alignment=ah_center_top); self.c_merge(cr,1,cr,len(x_index.keys()))
+        cr+=1; write(cr, 1, '-結束- 以下空白', alignment=ah_center_top); self.c_merge(cr,1,cr,len(x_i.keys()))
 
     def fmat_1(self, gid):
         # 格式化 1
@@ -212,14 +216,25 @@ class Report_bcs01(tool_excel):
         pd_type = bmr(gid,'pd_type')
         a = f"{bmr(gid,'bom_mol'):.3f}"; a=a.rstrip('0'); a=a.rstrip('.'); bom_mol=a
         b = f"{bmr(gid,'bom_den'):.3f}"; b=b.rstrip('0'); b=b.rstrip('.'); bom_den=b
-        return f'{bom_level}階({pd_type}件,用量/底數:{bom_mol}/{bom_den}'
+        return f'{bom_level}階({pd_type}件), 用量/底數:{bom_mol}/{bom_den}'
+
+    def fmat_md(self, pdno):
+        # 格式化 單位換算
+        md = self.bcs.dlookup_pdmd
+        md02 = md(pdno,'MD002') # 換算單位
+        md03 = md(pdno,'MD003') # 換算率分子
+        md04 = md(pdno,'MD004') # 換算率分母
+        if not is_dec(md04):
+            return f'{md03}{md02}/{md04:.0f}PCS'
+        else:
+            return f'{md03}{md02}/{md04}PCS'
 
 def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
-    # Report_bcs01(fileName, '4A401056')
+    Report_bcs01(fileName, '4A404011')
     # Report_bcs01(fileName, '5A110100015')
-    Report_bcs01(fileName, '6AA0602800600002')
-    # Report_bcs01(fileName, '7AA01001A01', True)
+    # Report_bcs01(fileName, '6AA01AA01A01B1B01')
+    # Report_bcs01(fileName, '8FC004', True)
     print('ok')
 
 if __name__ == '__main__':
