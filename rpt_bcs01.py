@@ -15,15 +15,20 @@ from config import *
 
 class Report_bcs01(tool_excel):
     def __init__(self, filename, pdno, pump_lock = False):
+        sg.theme('SystemDefault')
         self.fileName = filename
         self.pdno = pdno
         self.pump_lock = pump_lock
+
+        # if True: #debug
+        #     sg.popup('\nPart number is not exist\nplease confirm whether your product number.\n\n維護中!', title='bom製程成本表')
+        #     sys.exit()
+
         self.db = tool_db_yst.db_yst() # db
         if not self.db.is_exist_pd(self.pdno):
-            sg.theme('SystemDefault')
             sg.popup('\nPart number is not exist\nplease confirm whether your product number.\n\n品號不存在!', title='bom製程成本表')
             sys.exit()
-        
+
         self.report_name = 'bcs01' # BOM製程成本表
         self.report_dir = config_report_dir # 資料夾名稱
         self.report_path = os.path.join(os.path.expanduser(r'~\Documents'), self.report_dir) #資料夾路徑
@@ -91,7 +96,7 @@ class Report_bcs01(tool_excel):
             ahr = ah_right
             # func, method
             write=self.c_write; fill=self.c_fill; comm=self.c_comm; img=self.c_image2; column_w=self.c_column_width
-            gid = self.bcs.dlookup_gid     # bom品號資料
+            bmr = self.bcs.dlookup_gid     # bom品號資料
             md = self.bcs.dlookup_pdmd     # 單位換算
             mk = self.bcs.dlookup_bmk_pdno # 產品製程
 
@@ -109,32 +114,29 @@ class Report_bcs01(tool_excel):
             price = 0 # 總單價
             cr+=1; write(cr, x_index['序號'], group_idx+1, f11) # 序號
             cr-=1
-            for pdno_idx, v in enumerate(lis_gid):
-                pdno = gid(v,'pdno')
+            for pdno_idx, gid in enumerate(lis_gid):
+                pdno = bmr(gid,'pdno')
                 cr+=1; write(cr, x_index['品號'], pdno, f10, alignment=ah_wr) # 品號 
-                write(cr+1, x_index['品號'], v, f10g, alignment=ahr) # gid
                 crm = cr  # 紀錄位置 crm
-                if pdno_idx ==0:
-                    cr_pd = cr #紀錄位置 首個cr_pd
-                    # image
-                    max_height = 58 if gid(v,'bom_level_lowest') == True else 116
-                    img(cr, 1, pdno ,0.1,0.4,max_height=max_height)
-
                 # 自身總用量 self_quantity
                 if pdno_idx == 0:
-                    quantity = float(gid(v,'self_quantity'))
-                    cr=cr_pd+0; write(cr, x_index['總用量'], quantity, f11, alignment=ahr) # 自身總用量
+                    quantity = float(bmr(gid,'self_quantity'))
+                    write(cr, x_index['總用量'], quantity, f11, alignment=ahr) # 自身總用量
 
-                cr=cr_pd+0; write(cr, x_index['品名規格'], gid(v,'pd_name'), f11, alignment=ah_wr) # 品名
-                cr=cr_pd+1; write(cr, x_index['品名規格'], gid(v,'pd_spec'), f11, alignment=ah_wr) # 規格
+                if pdno_idx ==0:
+                    cr_pd = cr #紀錄位置 首個cr_pd
+                    max_height = 58 if bmr(gid,'bom_level_lowest') == True else 116
+                    img(cr, 1, pdno ,0.1,0.4,max_height=max_height)           # img
+                cr+=1; write(cr, x_index['品號'], gid, f10g, alignment=ahr)     # gid
 
-                tmpstr = f"{gid(v,'bom_level')}階({gid(v,'pd_type')}件),用量/底數:{gid(v,'bom_mol'):.3f}/{gid(v,'bom_den'):.3f}"
-                mol_den = float(gid(v,'bom_mol')/gid(v,'bom_den'))      # 用量換算率
-                cr=cr_pd+2; write(cr, x_index['品名規格'], tmpstr, f10)  # x階(x件),用量/底數
-
+                cr-=1
+                cr+=0; write(cr, x_index['品名規格'], bmr(gid,'pd_name'), f11, alignment=ah_wr) # 品名
+                cr+=1; write(cr, x_index['品名規格'], bmr(gid,'pd_spec'), f11, alignment=ah_wr) # 規格
+                mol_den = float(bmr(gid,'bom_mol')/bmr(gid,'bom_den'))       # 用量換算率
+                cr+=1; write(cr, x_index['品名規格'], self.fmat_1(gid), f10)  # x階(x件),用量/底數
                 if md(pdno,'MD002') != '':
                     tmpstr = f"{md(pdno,'MD003')}/{md(pdno,'MD004')}{md(pdno,'MD002')}"
-                    cr=cr_pd+3; write(cr, x_index['品名規格'], tmpstr, f10) #換算單位 0.5 /1.0 KG
+                    cr+=1; write(cr, x_index['品名規格'], tmpstr, f10) #換算單位 0.5 /1.0 KG
 
                 # 產品製程
                 crm -= 1
@@ -178,10 +180,10 @@ class Report_bcs01(tool_excel):
                             fill(crm, 8); comm(crm, 8, err_dic['err7'][pdno]['mssage'])
 
                 # 檢查
-                if v in err_dic['err1']:
+                if gid in err_dic['err1']:
                     fill(cr_pd+2,3); comm(cr_pd+2,3, '最下階應為P件，或應再建立P件為子件')
 
-                if v in err_dic['err2']:
+                if gid in err_dic['err2']:
                     fill(cr_pd+2,3); comm(cr_pd+2,3, 'P件不應該有BOM架構，或有BOM應為S件or M件')
 
                 cr = max(cr, crm)
@@ -203,9 +205,18 @@ class Report_bcs01(tool_excel):
 
         cr+=1; write(cr, 1, '-結束- 以下空白', alignment=ah_center_top); self.c_merge(cr,1,cr,len(x_index.keys()))
 
+    def fmat_1(self, gid):
+        # 格式化 1
+        bmr = self.bcs.dlookup_gid
+        bom_level = bmr(gid,'bom_level')
+        pd_type = bmr(gid,'pd_type')
+        a = f"{bmr(gid,'bom_mol'):.3f}"; a=a.rstrip('0'); a=a.rstrip('.'); bom_mol=a
+        b = f"{bmr(gid,'bom_den'):.3f}"; b=b.rstrip('0'); b=b.rstrip('.'); bom_den=b
+        return f'{bom_level}階({pd_type}件,用量/底數:{bom_mol}/{bom_den}'
+
 def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
-    # Report_bcs01(fileName, '4A404017')
+    # Report_bcs01(fileName, '4A401056')
     # Report_bcs01(fileName, '5A110100015')
     Report_bcs01(fileName, '6AA0602800600002')
     # Report_bcs01(fileName, '7AA01001A01', True)

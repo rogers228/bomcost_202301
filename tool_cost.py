@@ -438,7 +438,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         self.dic_err['err2'] = lis_err2
 
 def test1():
-    bom = COST('4A404017')
+    bom = COST('4A401056')
     # bom = COST('6AA0602800300002', pump_lock = True)
     print(bom.error_dic())
 
