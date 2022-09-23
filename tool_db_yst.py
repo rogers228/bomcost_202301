@@ -3,6 +3,7 @@ if True: # 固定引用開發環境 或 發佈環境 的 路徑
     config_path = os.getcwd() if os.getenv('COMPUTERNAME')=='VM-TESTER' else custom_path.custom_path['bomcost_202301'] # 目前路徑
     sys.path.append(config_path)
 
+# import re
 import pandas as pd
 # import pyodbc
 from sqlalchemy.engine import URL
@@ -13,6 +14,13 @@ class db_yst(): #讀取excel 單一零件
     def __init__(self):
         # self.cn = pyodbc.connect(config_conn_YST) # connect str 連接字串\
         self.cn = create_engine(URL.create('mssql+pyodbc', query={'odbc_connect': config_conn_YST})).connect()
+    
+    # def isRegMath_float(self,findStr): #返回第一個被找到的數字值
+    #     if any([findStr == None, findStr =='']):
+    #         return ''
+    #     mRegex = re.compile(r'\d+\.?\d*')
+    #     match = mRegex.search(findStr)
+    #     return match.group() if match else '' 
 
     def get_pd_test(self, pdno):
         s = "SELECT MB001,MB002,MB003 FROM INVMB WHERE MB001 = '{0}'"
@@ -80,6 +88,27 @@ class db_yst(): #讀取excel 單一零件
         df = pd.read_sql(s, self.cn)
         return df if len(df.index) > 0 else None
 
+    def stmk_to_df(self):
+        # 標準廠商途程單價
+        # 例如 士中 熱處理 固定單價 30
+        # 人員可在系統維護
+        # MF004 製程代號
+        # MF006 廠商代號
+        # MF018 未稅加工單價
+        df = self.get_bmk('92N001','01')
+        df = df[['MF004', 'MF006', 'MF018']]
+        return df if len(df.index) > 0 else None
+
+    def strk_to_df(self):
+        # 標準途程加工單位
+        # 例如 熱處理 固定加工單位為KG
+        # 人員可在系統維護
+        # MF004 製程代號
+        # MF017 加工單位
+        df = self.get_bmk('92N001','02')
+        df = df[['MF004', 'MF017']]
+        return df if len(df.index) > 0 else None
+
     def wget_imd(self, pdno_arr=''):
         # 品號單位換算
         # pdno_arr 品號 文字陣列
@@ -96,13 +125,63 @@ class db_yst(): #讀取excel 單一零件
         df = pd.read_sql(s, self.cn)
         return df if len(df.index) > 0 else None
 
+    def wget_cti(self, pdno_arr):
+        # 品號製令進貨 最新進貨
+        # 以 製程代號(TI015)、 廠商代號(TH005) 品號(TI004) 為群組尋找最後一筆
+        # pdno_arr 品號 文字陣列
+        if pdno_arr == "":
+            return None
+        pdno_arr = str(pdno_arr).replace(' ','') # 去除空格
+        pdno_inSTR = "('" + "','".join(pdno_arr.split(',')) + "')"
+        s = """
+            SELECT TI015,TH005,TI004,TI024,TI023,TI001,TI002
+            FROM MOCTI
+                LEFT JOIN MOCTH ON TI001=TH001 AND TI002=TH002
+            WHERE
+                (TI002+'-'+TI001) IN (
+                    SELECT MAX(TI002+'-'+TI001)
+                    FROM MOCTI LEFT JOIN MOCTH ON TI001=TH001 AND TI002=TH002
+                    WHERE TI004 IN {0}
+                    GROUP BY TI004,TI015,TH005
+                    )
+            """
+        s = s.format(pdno_inSTR)
+        df = pd.read_sql(s, self.cn)
+        return df if len(df.index) > 0 else None
+
+    def wget_pui(self, pdno_arr):
+        # 品號採購進貨 最新進貨
+        # 以 品號(TH004) 廠商代號(TG005)為群組尋找最後一筆
+        # pdno_arr 品號 文字陣列
+        if pdno_arr == "":
+            return None
+        pdno_arr = str(pdno_arr).replace(' ','') # 去除空格
+        pdno_inSTR = "('" + "','".join(pdno_arr.split(',')) + "')"
+        s = """
+            SELECT TH004,TG005,TG007,TH018,TH008,TH001,TH002
+            FROM PURTH
+                LEFT JOIN PURTG ON TH001=TG001 AND TH002=TG002
+            WHERE
+                (TH002+'-'+TH001) IN (
+                    SELECT MAX(TH002+'-'+TH001)
+                    FROM PURTH LEFT JOIN PURTG ON TH001=TG001 AND TH002=TG002
+                    WHERE TH004 IN {0}
+                    GROUP BY TH004,TG005
+                    )
+            """
+        s = s.format(pdno_inSTR)
+        df = pd.read_sql(s, self.cn)
+        return df if len(df.index) > 0 else None
+
 def test1():
     db = db_yst()
     # df = db.get_bom('4A302001')
-    # df = db.get_bmk('4A302001','01')
-    # print(df)
+    df = db.strk_to_df()
+    print(df)
     # print(db.get_pur_ma002('1020010'))
-    print(db.is_exist_pd('4A3060010'))
+    # print(db.wget_cti('4A428003'))
+    # print(db.wget_pui('3AAA1AA229'))
+
 
 if __name__ == '__main__':
     test1()        

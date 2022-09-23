@@ -242,9 +242,10 @@ class BOM(): # 產生bom to_df() 方法
 
 def test1():
     # bom = BOM('4A306001')
-    bom = BOM('5A010100005')
+    # bom = BOM('5A010100005')
     # bom = BOM('6AA03FA001EL1A01')
     # bom = BOM('7AA01001A01', pump_lock = True)
+    bom = BOM('8AC024', pump_lock = True)
     df = bom.to_df()
     pd.set_option('display.max_rows', df.shape[0]+1) # 顯示最多列
     pd.set_option('display.max_columns', None) #顯示最多欄位

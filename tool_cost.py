@@ -14,21 +14,54 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         #tool
         self.yst = tool_db_yst.db_yst()
         self.df_bom = tool_bom.BOM(pdno, pump_lock).to_df() # BOM
-        self.df_md = self.yst.wget_imd(','.join(list(set(self.df_bom['pdno'].tolist())))) #所有品號單位換算
+        pdno_arr_str = ','.join(list(set(self.df_bom['pdno'].tolist())))
+        # print('pdno_arr_str:', pdno_arr_str)
+        self.df_md = self.yst.wget_imd(pdno_arr_str) #所有品號單位換算
+        # print(self.df_md)
+        self.df_ct = self.yst.wget_cti(pdno_arr_str) #所有品號 托外最新進貨
+        self.df_ct = self.df_ct.sort_values(by='TI002', ascending=False) # 排序最新
+        # print(self.df_ct)
+        # 標準廠商途程單價
+        self.df_stmk = self.yst.stmk_to_df() # 標準廠商途程單價
+        self.df_strk = self.yst.strk_to_df() # 標準途程加工單位
         self.dic_err = {} # 異常
         self.comp_1() # 計算成本群組 rerutn  self.cost_group_list
         self.comp_2() # 計算所有製程成本 rerutn  self.dic_bmk, self.dic_gid_pdno
         self.comp_3() # 檢查資料異常
 
-    def spec_md_dic(self):
-        # 特定製程必為特定單位
-        return {
-            '熱處理':     'KG',
-            '真空熱處理': 'KG',
-            '氮化處理':   'KG',
-            }
     def error_dic(self):
         return self.dic_err
+        '''
+        {
+            'err1': lis_err1, # (gid list) 最下階應為P, Q件，或應再建立P件為子件
+            'err2': lis_err2, # (gid list) P件不應該有BOM架構，或有BOM應為S件or M件
+            'err3':
+            {
+                'gid': lis_err3 (加工單位) 有製程單位卻無換算單位
+            },
+            'err5':  該製程 已有最新托外進貨  未更新
+            {
+                'pdno':{
+                    'mk_i':
+                    'message'
+                } 
+            } 
+            'err6': 該製程  不符合 標準廠商加工單價
+            {
+                'pdno':{
+                    'mk_i':
+                    'message'
+                } 
+            }
+            'err7': 該製程  不符合 標準加工單位
+            {
+                'pdno':{
+                    'mk_i':
+                    'message'
+                } 
+            }            
+        }
+        '''
 
     def group_to_list(self):
         return self.cost_group_list
@@ -44,9 +77,49 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         df = self.df_md
         if df is None:
             return result
-            
-        if pdno in df['MD001'].tolist():
-            result = df.loc[df['MD001']==pdno][column].item()
+        
+        df_w = df.loc[df['MD001']==pdno]
+        if len(df_w.index)>0:
+            result = df_w.iloc[0][column]
+        return result
+
+    def dlookup_stmk(self, mf006, mf004):
+        # 從2個條件: 廠商代號mf006, 製程代號mf004
+        # 找到 MF018 加工單價
+        result = 0
+        df = self.df_stmk
+        if df is None:
+            return result
+        df_w = df.loc[(df['MF006']==mf006.ljust(10)) & (df['MF004']==mf004)]
+        if len(df_w.index)>0:
+            result = df_w.iloc[0]['MF018']
+        return result
+
+    def dlookup_strk(self, mf004):
+        # 從1個條件: 製程代號mf004
+        # 找到 MF017 加工單位
+        result = ''
+        df = self.df_strk
+        if df is None:
+            return result
+        df_w = df.loc[df['MF004']==mf004]
+        if len(df_w.index)>0:
+            result = df_w.iloc[0]['MF017']
+        return result
+
+    def dlookup_pdct(self, pdno, ti015, column):
+        # 從2個條件: 品號pdno, 製程代號ti015
+        # 找到第一筆(最新)對應的 column欄位名稱的值value
+        # 廠商代號 單價 計價單位 進貨單別   單號
+        # TH005   TI024 TI023 TI001        TI002
+        #          25.0    KG  D302  20170607002
+        result = ''
+        df = self.df_ct
+        if df is None:
+            return result
+        df_w = df.loc[(df['TI004']==pdno) & (df['TI015']==ti015)]
+        if len(df_w.index)>0:
+            result = df_w.iloc[0][column]
         return result
 
     def dlookup_pdmd_tolist(self, pdno):
@@ -105,6 +178,8 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                 if pid(curr_id,'bom_type')==2:     # 往下找 該子件為 2材料 (bom_type 由 tool_bom class定義)
                     arr_c.append(child_id) # 添加到子層
                     continue
+        # print('step 1 arr_c:', arr_c.tolist())
+
         # step 2 由材料找 
         df = self.df_bom
         df_w = df[df['pdno'].str.contains(r'^2.*')] # 材料件 品號2開頭
@@ -114,38 +189,44 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         
         lis_c = arr_c.tolist(); lis_c.sort() # 排序
         arr_c = array.array('i', lis_c) 
-        # print('arr_c:', arr_c.tolist())
+        # print('step 2 arr_c:', arr_c.tolist())
 
         # step 3 產生 group list
         # [[90], [89], [88, 87], [87], [86], [85, 84, 83]]
         lis_g = []
         arr_gid = array.array('i', self.df_bom['gid'].tolist()) # all gid
+
         arr_gid.reverse() # 反序遍歷
-        # print(arr_gid.tolist()) 
+        # print('step 3 arr_gid:', arr_gid.tolist()) 
         while len(arr_gid)>0:
             lis_t = [] # 暫存
             curr_id = arr_gid[0]
-            arr_gid.remove(curr_id)
+            # print('curr_id:', curr_id)
+            arr_gid.remove(curr_id) # 刪除本迴圈的id
             loop_id = curr_id
+
             while loop_id in arr_c: # 是材料
                 arr_c.remove(loop_id) # 移除arr_c 直到沒有 才不會無線循環
                 if curr_id not in lis_t:
-                        lis_t.append(loop_id)
+                    lis_t.append(loop_id) # 添加自己
 
                 parent_id = gid(loop_id,'pid')
-                if parent_id not in lis_t:
-                        lis_t.append(parent_id)
+                p_level =gid(parent_id, 'bom_level') # 父階層
+                if all([parent_id not in lis_t]):
+                    lis_t.append(parent_id) # 添加父  (有機率會重複添加gid為1者，後續應刪除 移除重複的首階)
                 loop_id = parent_id
             else:
                 if curr_id not in lis_t:
                     lis_t.append(curr_id)
+            # print('lis_t:', lis_t)
             lis_g.append(lis_t)
+        # print('lis_g:', lis_g)
 
         lis_g.reverse() # 恢復反序
-        # print(lis_g)
         for lis in lis_g:
             if len(lis) > 1:
                 lis.reverse()
+        # print('lis_g:', lis_g)
 
         finish = False # 移除重複元素
         while finish == False:
@@ -158,6 +239,13 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             if len(lis_g) <= 1:
                 finish = True
 
+        # 移除重複的首階
+        # 首個gid 必為1，在第首個項目中必定有gid 為1
+        # 固 第2個以後的項目中 肯定不能再有1 否則為重複
+        for i in range(1, len(lis_g)): # 第2個開始遍歷
+            if 1 in lis_g[i]:
+                del lis_g[i][0]
+
         self.cost_group_list = lis_g
 
     def comp_2(self): # 計算宏觀產品製程成本
@@ -165,7 +253,9 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         re_f = self.isRegMath_float # re 文字找數字
         pmd = self.dlookup_pdmd # 找換算單位
         pmd_tolist = self.dlookup_pdmd_tolist # 從 pdno 找所有換算單位
-        dic_spmd = self.spec_md_dic() #特定單位
+        stmk = self.dlookup_stmk     # 找標準廠商途程單價
+        strk = self.dlookup_strk     # 找標準途程加工單位
+        pdct = self.dlookup_pdct     # 找托外最新進價
 
         # step 1
         dic_msy = {} #　所有M,S,Y品號的產品製程
@@ -196,11 +286,10 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             'MF023': '備註(自訂單價)',
             'MW002': '製程',
             'SS001': '製程單價',  # 該製程加工單位的單價  例如1KG多少錢 (非鼎新資料)
-            'SS002': '單價',      # 該製程換算為PCS的單價 (非鼎新資料)            
+            'SS002': '單價',      # 該製程換算為PCS的單價 (非鼎新資料)
+            'SS031': '最新進價',  # 
             }
         lis_columns = list(dic_columns.keys())
-
-        lis_err4 = [] # gid-mk_i 的string array
         for i, r in df.iterrows():
             # 宏觀的產品製程( 包含產品製程資料 及 採購資料)  to_df() 方法
             df_m = pd.DataFrame(None, columns = list(dic_columns.keys())) # None dataframe
@@ -230,12 +319,6 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                 if len(lis_err3) > 0:
                     dic_err3[r['gid']] = lis_err3
 
-                # 檢查 4 特定製程的單位必為特定單位
-                for mk_i, mk_r in df_make.iterrows():
-                    if mk_r['MW002'] in list(dic_spmd.keys()):
-                        if dic_spmd[mk_r['MW002']] != mk_r['MF017']:
-                            lis_err4.append(f"{r['gid']}-{mk_i}")
-
             elif r['pd_type'] in 'Q': # 不展BOM銷售件
                 dic_p = {
                 'MW002': '銷售', # 製程
@@ -248,44 +331,87 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
 
             dic_all[r['pdno']] = df_m
         self.dic_err['err3'] = dic_err3
-        self.dic_err['err4'] = lis_err4
 
-        # step 3 清洗 複製 SS001, SS002
+        # step 3 清洗 複製 SS001, SS002, SS003
+        dic_err5 = {}; dic_err6 = {}; dic_err7 = {}
         dic_all_new = {}
         for pdno, df_s in dic_all.items():
             df_new = df_s.copy()
+            dic_err5_tmp = {}; dic_err6_tmp = {}; dic_err7_tmp = {}
             for i, r in df_s.iterrows():
+                f_ss001 = 0 # 製程單價
+                f_ss031 = 0 # 最新進價
                 if r['MW002'] in ['採購','銷售']:
                     f_ss001 = r['MF018']
+                    # f_ss031 = pdpu(pdno, r['MF006'].strip(),'TH018') # 採購最新進價
+
                 else:
                     # 製造加工
+                    st_mf017 = strk(r['MF004']) # 標準途程加工單位
+                    if st_mf017:
+                        if st_mf017 != r['MF017']:
+                            dic_err7_tmp['mk_i'] = i
+                            dic_err7_tmp['mssage'] = f'不符合標準途程加工單位:{st_mf017}'
+
                     if r['MF005'] == '1':
                         f_ss001 = re_f(r['MF023']) # 1自製抓 MF023 備註
                     elif r['MF005'] == '2':
                         f_ss001 = r['MF018']       # 2托外抓 MF018 加工單價
+                        f_ss031 = pdct(pdno, r['MF004'],'TI024') # 托外最新進價
+                        if not f_ss031:
+                            f_ss031 = 0
+
+                        st_mf003 = stmk(r['MF006'], r['MF004']) # 標準廠商加工單價
+                        if st_mf003: # 有標準廠商加工單價
+                            if f_ss001 != st_mf003: # 不符合標準廠商加工單價
+                                dic_err6_tmp['mk_i'] = i
+                                dic_err6_tmp['mssage'] = f'不符合標準廠商加工單價{st_mf003}'
+                        else: # 沒有標準廠商加工單價
+                            if all([float(f_ss031) != float(f_ss001), f_ss031 != 0]): # 已有最新進價
+                                dic_err5_tmp['mk_i'] = i
+                                ti001 = pdct(pdno, r['MF004'],'TI001')
+                                ti002 = pdct(pdno, r['MF004'],'TI002')
+                                ti023 = pdct(pdno, r['MF004'],'TI023')
+                                th005 = pdct(pdno, r['MF004'],'TH005')
+                                dic_err5_tmp['mssage'] = f'進貨{ti001}-{ti002}\n已有最新進價:{f_ss031}\n計價單位{ti023}\n廠商代號:{th005}'
                     else:
                         f_ss001 = 0
+                        f_ss031 = 0
+
 
                 if pmd(pdno, 'MD002') == r['MF017']: # 有換算單位
-                    f_ss002 = f_ss001 * pmd(pdno, 'MD003')
+                    f_ss002 = float(f_ss001) * pmd(pdno, 'MD003')
                 else:
-                    f_ss002 = f_ss001
-                df_new.at[i,'SS001'] = f_ss001
-                df_new.at[i,'SS002'] = f_ss002
+                    f_ss002 = float(f_ss001) if f_ss001 else 0
+                df_new.at[i,'SS001'] = f_ss001 # 製程單價 該製程加工單位的單價  例如1KG多少錢
+                df_new.at[i,'SS002'] = f_ss002 # 單價 該製程換算為PCS的單價
+                df_new.at[i,'SS031'] = f_ss031 if f_ss031 else 0 # 最新進價
 
             #  type object to numeric
             df_new['SS001'] = pd.to_numeric(df_new['SS001'], errors='coerce')
             df_new['SS002'] = pd.to_numeric(df_new['SS002'], errors='coerce')
-            df_new[['SS001', 'SS002']] = df_new[['SS001','SS002']].fillna(value=0) # 空白補0
+            df_new['SS031'] = pd.to_numeric(df_new['SS031'], errors='coerce')
+            df_new[['SS001','SS002','SS031']] = df_new[['SS001','SS002','SS031']].fillna(value=0) # 空白補0
             # print(df_new.dtypes)
             dic_all_new[pdno] = df_new
+
+            if len(dic_err5_tmp)>0:
+                dic_err5[pdno] = dic_err5_tmp #  托外最新加工單價 未維護
+            if len(dic_err6_tmp)>0:
+                dic_err6[pdno] = dic_err6_tmp #  不吻合 標準廠商加工單價
+            if len(dic_err7_tmp)>0:
+                dic_err7[pdno] = dic_err7_tmp #  不吻合 標準途程加工單位
+
+        self.dic_err['err5'] = dic_err5
+        self.dic_err['err6'] = dic_err6
+        self.dic_err['err7'] = dic_err7
         self.dic_bmk = dic_all_new
 
         # debug
-        # print('step 3 new')
         # for k, v in dic_all_new.items():
-        #     print(k)
-        #     df = v[['MF001','MW002','MF017','MF018','MF023','SS001','SS002']]
+        #     # print(k)
+        #     # df = v[['MF001','MW002','MF017','MF018','MF023','SS001','SS002','SS031']]
+        #     df = v[['MF001','MW002','MF017','MF006','MF004','SS031']]
         #     print(df)
 
     def comp_3(self): # 檢查資料異常
@@ -312,14 +438,18 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         self.dic_err['err2'] = lis_err2
 
 def test1():
-    bom = COST('5A010100005')
+    bom = COST('4A404017')
+    # bom = COST('6AA0602800300002', pump_lock = True)
     print(bom.error_dic())
-    # bom = COST('7AA01001A01')
-    # print(bom.dlookup_bmk_pdno('5A090100005'))
-    # bom = COST('5A090600004')
-    # lis = bom.group_to_list()
-    # print(lis)
-    # bom = COST('5E00970')
+
+    # bom = COST('8AC002', pump_lock = True)
+    # bom = COST('4A428003')
+    lis = bom.group_to_list()
+    print(lis)
+
+    a = bom.dlookup_strk('1020135   ')
+    print('ans:', a)
+
 
 if __name__ == '__main__':
     test1()
