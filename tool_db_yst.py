@@ -40,6 +40,12 @@ class db_yst(): #讀取excel 單一零件
         df = pd.read_sql(s, self.cn) #轉pd
         return df.iloc[0]['MA002'] if len(df.index) > 0 else ''
 
+    def get_purluck_to_list(self): # 不准交易供應商
+        s = "SELECT MA001,MA002 FROM PURMA WHERE MA016 = 3"
+        df = pd.read_sql(s, self.cn) #轉pd
+        df[['MA001']] = df[['MA001']].apply(lambda e: e.str.strip())
+        return df['MA001'].tolist() if len(df.index) > 0 else []
+
     def get_pd_one_to_dic(self, pdno):
         s = """
         SELECT TOP 1
@@ -176,7 +182,7 @@ class db_yst(): #讀取excel 單一零件
 def test1():
     db = db_yst()
     # df = db.get_bom('4A302001')
-    df = db.strk_to_df()
+    df = db.get_purluck_to_list()
     print(df)
     # print(db.get_pur_ma002('1020010'))
     # print(db.wget_cti('4A428003'))
