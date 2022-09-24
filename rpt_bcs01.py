@@ -169,6 +169,11 @@ class Report_bcs01(tool_excel):
                         sn='製程單價'; fill(crm, x_i[sn])
                         sn='單價';    fill(crm, x_i[sn])
 
+                    # 檢查 禁止交易供應商
+                    if pdno in list(err_dic['err4'].keys()):
+                        if err_dic['err4'][pdno]['mk_i'] == mk_i:
+                            sn='簡稱'; cj=x_i[sn]; fill(crm, cj); comm(crm, cj, err_dic['err4'][pdno]['mssage'])
+
                     # 檢查 已有最新托外進價
                     if pdno in list(err_dic['err5'].keys()):
                         if err_dic['err5'][pdno]['mk_i'] == mk_i:
@@ -231,9 +236,9 @@ class Report_bcs01(tool_excel):
 
 def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
-    Report_bcs01(fileName, '4A404011')
+    # Report_bcs01(fileName, '4A404011')
     # Report_bcs01(fileName, '5A110100015')
-    # Report_bcs01(fileName, '6AA01AA01A01B1B01')
+    Report_bcs01(fileName, '6AA01AA01A01B1B01')
     # Report_bcs01(fileName, '8FC004', True)
     print('ok')
 

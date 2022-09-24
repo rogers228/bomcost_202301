@@ -45,6 +45,12 @@ class db_yst(): #讀取excel 單一零件
         df = pd.read_sql(s, self.cn) #轉pd
         df[['MA001']] = df[['MA001']].apply(lambda e: e.str.strip())
         return df['MA001'].tolist() if len(df.index) > 0 else []
+        # lis = df['MA001'].tolist()
+        # lis.append('1020001')
+        # lis.append('1020010')
+        # return lis
+
+        
 
     def get_pd_one_to_dic(self, pdno):
         s = """
