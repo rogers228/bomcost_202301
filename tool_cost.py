@@ -185,7 +185,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                 if lis_c.count(lis_c[0]) == len(lis_c): # N筆交易紀錄為同一間
                     if lis_c[0] != mf006:  # 異於主供應商
                         result = True
-                        message =  f"最後3筆採購紀錄為{df_c.iloc[0]['TG005'].strip()}{df_c.iloc[0]['MA002']}\n建議修改為主供應商"
+                        message =  f"最後3筆進貨紀錄為{df_c.iloc[0]['TG005'].strip()}{df_c.iloc[0]['MA002']}\n建議修改為主供應商"
         return result, message
 
     def comp_1(self):
@@ -466,11 +466,11 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
 
         # 最後N筆交易紀錄 是否已改變供應商
         islast = self.is_pui_last_change
-        ed8={} # error dictionary
-        em8={} # error message
         df_w = df.loc[df['pd_type'] == 'P']
         if len(df_w.index)>0:
+            ed8={} # error dictionary
             for pdno, supply in zip(df_w['pdno'].tolist(), df_w['supply'].tolist()):
+                em8={} # error message
                 result, message = islast(pdno, supply)
                 if result == True:
                     em8['mssage']= message
@@ -478,16 +478,14 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         info['err8']=ed8
 
 def test1():
-    # bom = COST('4A404011')
-    bom = COST('4A316001')
-
-    # bom = COST('6AA0221AA1AA01', pump_lock = True)
+    # bom = COST('4A603001')
+    bom = COST('6AA1120100001', pump_lock = True)
     print(bom.error_dic())
 
     # bom = COST('8AC002', pump_lock = True)
     # bom = COST('4A428003')
-    lis = bom.group_to_list()
-    print(lis)
+    # lis = bom.group_to_list()
+    # print(lis)
 
 if __name__ == '__main__':
     test1()

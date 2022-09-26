@@ -201,7 +201,7 @@ class db_yst(): #讀取excel 單一零件
         return df if len(df.index) > 0 else None
 
     def get_puilast_to_df(self, pdno, last_time):
-        # 品號採購進貨 最後新進貨N筆 的供應商清單
+        # 品號採購進貨 最後新進貨N筆 的供應商清單  (進貨 非 採購)
         # pdno: 品號(TH004) 
         # last_time :進貨N筆
         # TG005       MA002
@@ -222,8 +222,8 @@ class db_yst(): #讀取excel 單一零件
 
 def test1():
     db = db_yst()
-    # df = db.get_bom('4A302001')
-    df = db.get_puilast_to_df('2ABAAF05303901',3)
+    # df = db.get_bom('4A603001')
+    df = db.get_puilast_to_df('3AAB1AA009',3)
     print(df)
     # print(db.get_pur_ma002('1020010'))
     # print(db.wget_cti('4A428003'))
