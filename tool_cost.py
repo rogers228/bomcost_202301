@@ -68,6 +68,13 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                     'mk_i':
                     'message'
                 } 
+            }
+            'err8': 該製程(採購)  最後N筆已更改供應商
+            {
+                'pdno':{
+                    'mk_i':
+                    'message'
+                } 
             }            
         }
         '''
@@ -164,6 +171,22 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         mRegex = re.compile(r'\d+\.?\d*')
         match = mRegex.search(findStr)
         return match.group() if match else '' 
+
+    def is_pui_last_change(self, pdno, mf006):
+        # 最後N筆交易紀錄 是否已改變供應商 (用來檢查是否修改主供應商)
+        # 是否 已異於主供應商  且為同一間
+        # mf006 目前廠商代號
+        result, message = False, ''
+        last_time = 3 # 最後3筆交易紀錄
+        df_c = self.yst.get_puilast_to_df(pdno, last_time) # 最後n筆交易供應商 dataframe 1010033 同洋
+        if df_c is not None:
+            lis_c = df_c['TG005'].tolist()
+            if len(lis_c) >= last_time: # 有超過N筆交易紀錄
+                if lis_c.count(lis_c[0]) == len(lis_c): # N筆交易紀錄為同一間
+                    if lis_c[0] != mf006:  # 異於主供應商
+                        result = True
+                        message =  f"最後3筆採購紀錄為{df_c.iloc[0]['TG005'].strip()}{df_c.iloc[0]['MA002']}\n建議修改為主供應商"
+        return result, message
 
     def comp_1(self):
         '''
@@ -441,9 +464,24 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             lis_err2 = df_w['gid'].tolist()
         info['err2'] = lis_err2
 
+        # 最後N筆交易紀錄 是否已改變供應商
+        islast = self.is_pui_last_change
+        ed8={} # error dictionary
+        em8={} # error message
+        df_w = df.loc[df['pd_type'] == 'P']
+        if len(df_w.index)>0:
+            for pdno, supply in zip(df_w['pdno'].tolist(), df_w['supply'].tolist()):
+                result, message = islast(pdno, supply)
+                if result == True:
+                    em8['mssage']= message
+                    ed8[pdno] = em8
+        info['err8']=ed8
+
 def test1():
-    bom = COST('4A404011')
-    # bom = COST('6AA0602800300002', pump_lock = True)
+    # bom = COST('4A404011')
+    bom = COST('4A316001')
+
+    # bom = COST('6AA0221AA1AA01', pump_lock = True)
     print(bom.error_dic())
 
     # bom = COST('8AC002', pump_lock = True)

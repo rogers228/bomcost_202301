@@ -189,6 +189,10 @@ class Report_bcs01(tool_excel):
                         if err_dic['err7'][pdno]['mk_i'] == mk_i:
                             sn='單位'; cj=x_i[sn]; fill(crm, cj); comm(crm, cj, err_dic['err7'][pdno]['mssage'])
 
+                    # 檢查 # 最後N筆交易紀錄 是否已改變供應商
+                    if pdno in list(err_dic['err8'].keys()):
+                        sn='簡稱'; cj=x_i[sn]; fill(crm, cj, fillcolor=cf_khaki); comm(crm, cj, err_dic['err8'][pdno]['mssage'])
+
                 # 檢查
                 if gid in err_dic['err1']:
                     sn='品名規格'; cj=x_i[sn]; fill(cr_pd+2,cj); comm(cr_pd+2,cj, '最下階應為P件，或應再建立P件為子件')
@@ -236,9 +240,9 @@ class Report_bcs01(tool_excel):
 
 def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
-    # Report_bcs01(fileName, '4A404011')
+    # Report_bcs01(fileName, '4A316001')
     # Report_bcs01(fileName, '5A110100015')
-    Report_bcs01(fileName, '6AA01AA01A01B1B01')
+    Report_bcs01(fileName, '6AA0221AA1AA01')
     # Report_bcs01(fileName, '8FC004', True)
     print('ok')
 

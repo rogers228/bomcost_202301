@@ -161,6 +161,21 @@ class db_yst(): #讀取excel 單一零件
         df = pd.read_sql(s, self.cn)
         return df if len(df.index) > 0 else None
 
+    # def get_cti_last(self, pdno, ti015):
+    #     # 品號製令進貨 最新進貨 3筆
+    #     # 以 品號(TI004) 製程代號(TI015) 尋找最後x筆
+    #     s = """
+    #         SELECT TOP 5 TI015,TH005,TI004,TI024,TI023,TI001,TI002
+    #         FROM MOCTI
+    #             LEFT JOIN MOCTH ON TI001=TH001 AND TI002=TH002
+    #         WHERE
+    #             TI004 = {0} AND 
+    #             TI015 = {1}
+    #         """
+    #     s = s.format(pdno)
+    #     df = pd.read_sql(s, self.cn)
+    #     return df if len(df.index) > 0 else None
+
     def wget_pui(self, pdno_arr):
         # 品號採購進貨 最新進貨
         # 以 品號(TH004) 廠商代號(TG005)為群組尋找最後一筆
@@ -185,10 +200,30 @@ class db_yst(): #讀取excel 單一零件
         df = pd.read_sql(s, self.cn)
         return df if len(df.index) > 0 else None
 
+    def get_puilast_to_df(self, pdno, last_time):
+        # 品號採購進貨 最後新進貨N筆 的供應商清單
+        # pdno: 品號(TH004) 
+        # last_time :進貨N筆
+        # TG005       MA002
+        # 供應商代號  簡稱
+        s = """
+            SELECT TOP {1} TG005,MA002
+            FROM PURTH
+                LEFT JOIN PURTG ON TH001=TG001 AND TH002=TG002
+                LEFT JOIN PURMA ON TG005=MA001
+            WHERE
+                TH004 = '{0}'
+            ORDER BY TH002 DESC
+            """
+        # SELECT TOP {1} TH004,TG005,TG007,TH018,TH008,TH001,TH002
+        s = s.format(pdno, last_time)
+        df = pd.read_sql(s, self.cn)
+        return df if len(df.index) > 0 else None
+
 def test1():
     db = db_yst()
     # df = db.get_bom('4A302001')
-    df = db.get_purluck_to_list()
+    df = db.get_puilast_to_df('2ABAAF05303901',3)
     print(df)
     # print(db.get_pur_ma002('1020010'))
     # print(db.wget_cti('4A428003'))
