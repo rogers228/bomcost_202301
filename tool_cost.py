@@ -30,6 +30,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         self.comp_1() # 計算成本群組 rerutn  self.cost_group_list
         self.comp_2() # 計算所有製程成本 rerutn  self.dic_bmk, self.dic_gid_pdno
         self.comp_3() # 檢查資料異常
+        self.comp_4() # 估算材料單價
 
     def error_dic(self):
         return self.error_information
@@ -164,7 +165,15 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         if pid in df['pid'].tolist():
             result = df.loc[df['pid']==pid][column].item()
         return result
- 
+
+    def dlookup_gid_pkg(self, gid):
+        # 從 gid 找對應的 column欄位名稱的值value
+        result = ''
+        df = self.df_pkg
+        if gid in df['gid'].tolist():
+            result = df.loc[df['gid']==gid]['p_kg'].item()
+        return result
+
     def isRegMath_float(self,findStr): #返回第一個被找到的數字值
         if any([findStr == None, findStr =='']):
             return ''
@@ -477,15 +486,32 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                     ed8[pdno] = em8
         info['err8']=ed8
 
+    def find_kg(self, pd_spec): # 正則找KG
+        mRegex = re.compile(r"(?<=@)\d*\.*\d*(?=KG)")
+        match = mRegex.search(pd_spec)
+        return match.group() if match else 0
+
+    def comp_4(self): # 估算材料單價
+        df = self.df_bom
+        df_w = df.loc[(df['pd_type'] == 'P') &
+                      (df['pdno'].str.contains(r'^2.*')) & # 2開頭
+                      (df['pd_spec'].str.contains(r'@\s*.*\s*KG'))] # 有@ KG者
+        
+        df1 = df_w[['gid','pdno','pd_spec']].copy()
+        df1.reset_index(inplace=True) #重置索引
+        df1[['p_kg']] = df1.apply(lambda r: self.find_kg(r['pd_spec']), axis=1)
+        # print(df1)
+        self.df_pkg = df1
+
 def test1():
     # bom = COST('4A603001')
-    bom = COST('6AA1120100001', pump_lock = True)
+    bom = COST('5Y0000002', pump_lock = True)
     print(bom.error_dic())
 
     # bom = COST('8AC002', pump_lock = True)
     # bom = COST('4A428003')
-    # lis = bom.group_to_list()
-    # print(lis)
+    lis = bom.group_to_list()
+    print(lis)
 
 if __name__ == '__main__':
     test1()

@@ -101,6 +101,7 @@ class Report_bcs01(tool_excel):
             bmr = self.bcs.dlookup_gid     # bom品號資料
             md = self.bcs.dlookup_pdmd     # 單位換算
             mk = self.bcs.dlookup_bmk_pdno # 產品製程
+            pkg = self.bcs.dlookup_gid_pkg # 產品材料規格KG
             # number_format
             nf_total = '$#,##0.0'
 
@@ -151,11 +152,22 @@ class Report_bcs01(tool_excel):
                     sn='製號';    write(crm, x_i[sn], mk_r[x_sqlcn[sn]], f9g)
                     sn='製程';    write(crm, x_i[sn], mk_r[x_sqlcn[sn]], f11, alignment=ah_wr)
                     sn='製程敘述'; write(crm, x_i[sn], mk_r[x_sqlcn[sn]], f10, alignment=ah_wr)
-                    sn='單位';     write(crm, x_i[sn], mk_r[x_sqlcn[sn]], f11)
+                    sn='單位';    write(crm, x_i[sn], mk_r[x_sqlcn[sn]], f11)
                     sn='製程單價'; write(crm, x_i[sn], mk_r[x_sqlcn[sn]], f11, alignment=ahr)
+                    # 顯使材料kg
+                    if all([bmr(gid,'pd_type')=='P', len(df_mk.index)==1,
+                        mk_r[x_sqlcn['單位']]=='PCS']): # P採購件 且 宏觀製程僅1筆 且單位為PCS
+                        pd_kg = pkg(gid)
+                        if pd_kg != '': # 有KG資料
+                            price_kg = round(float(mk_r[x_sqlcn['製程單價']])/float(pd_kg), 2)
+                            write(crm+1, x_i[sn], f'({price_kg}/KG)', f11gr, alignment=ahr)
+
                     # 單價 =   製程單價(加工單價*單位換算)  * 用量換算率(用量/底數)
                     price_mol_den = float(mk_r['SS002']) * min(mol_den, 1) # 小於1時應換算(取最小且最大為1)
                     sn='單價';    write(crm, x_i[sn], price_mol_den, f11, alignment=ahr)
+
+
+
                     sn='工時批量'; write(crm, x_i[sn], mk_r[x_sqlcn[sn]], f11, alignment=ahr)
                     if mk_r['MF005'] == '1': # 自製
                         sn='固定人時';v=mk_r[x_sqlcn[sn]];v=str(v).replace('00:00:00','');v=v.replace('nan','');write(crm,x_i[sn],v,f11)
@@ -241,7 +253,7 @@ class Report_bcs01(tool_excel):
 def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
     # Report_bcs01(fileName, '4A603001')
-    # Report_bcs01(fileName, '5A110100015')
+    # Report_bcs01(fileName, '5Y0000002')
     Report_bcs01(fileName, '6AA1120100001')
     # Report_bcs01(fileName, '8FC004', True)
     print('ok')
