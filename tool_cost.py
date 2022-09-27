@@ -493,19 +493,23 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
 
     def comp_4(self): # 估算材料單價
         df = self.df_bom
+        fkg = self.find_kg
         df_w = df.loc[(df['pd_type'] == 'P') &
                       (df['pdno'].str.contains(r'^2.*')) & # 2開頭
                       (df['pd_spec'].str.contains(r'@\s*.*\s*KG'))] # 有@ KG者
         
         df1 = df_w[['gid','pdno','pd_spec']].copy()
         df1.reset_index(inplace=True) #重置索引
-        df1[['p_kg']] = df1.apply(lambda r: self.find_kg(r['pd_spec']), axis=1)
+        lis = []
+        for i, r in df1.iterrows():
+            lis.append(fkg(r['pd_spec']))
+        df1.insert(len(df1.columns), 'p_kg', lis, True) #插在最後
         # print(df1)
         self.df_pkg = df1
 
 def test1():
     # bom = COST('4A603001')
-    bom = COST('5Y0000002', pump_lock = True)
+    bom = COST('6AA03SA101AL1A01', pump_lock = True)
     print(bom.error_dic())
 
     # bom = COST('8AC002', pump_lock = True)

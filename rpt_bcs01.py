@@ -165,9 +165,6 @@ class Report_bcs01(tool_excel):
                     # 單價 =   製程單價(加工單價*單位換算)  * 用量換算率(用量/底數)
                     price_mol_den = float(mk_r['SS002']) * min(mol_den, 1) # 小於1時應換算(取最小且最大為1)
                     sn='單價';    write(crm, x_i[sn], price_mol_den, f11, alignment=ahr)
-
-
-
                     sn='工時批量'; write(crm, x_i[sn], mk_r[x_sqlcn[sn]], f11, alignment=ahr)
                     if mk_r['MF005'] == '1': # 自製
                         sn='固定人時';v=mk_r[x_sqlcn[sn]];v=str(v).replace('00:00:00','');v=v.replace('nan','');write(crm,x_i[sn],v,f11)
@@ -254,7 +251,7 @@ def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
     # Report_bcs01(fileName, '4A603001')
     # Report_bcs01(fileName, '5Y0000002')
-    Report_bcs01(fileName, '6AA1120100001')
+    Report_bcs01(fileName, '6AA03SA101AL1A01')
     # Report_bcs01(fileName, '8FC004', True)
     print('ok')
 
