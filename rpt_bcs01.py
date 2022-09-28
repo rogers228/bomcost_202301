@@ -250,8 +250,9 @@ class Report_bcs01(tool_excel):
 def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
     # Report_bcs01(fileName, '4A603001')
+    Report_bcs01(fileName, '4B206018')
     # Report_bcs01(fileName, '5Y0000002')
-    Report_bcs01(fileName, '6AA03SA101AL1A01')
+    # Report_bcs01(fileName, '6AA03SA101AL1A01')
     # Report_bcs01(fileName, '8FC004', True)
     print('ok')
 

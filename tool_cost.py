@@ -19,7 +19,8 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         self.df_md = self.yst.wget_imd(pdno_arr_str) #所有品號單位換算
         # print(self.df_md)
         self.df_ct = self.yst.wget_cti(pdno_arr_str) #所有品號 托外最新進貨
-        self.df_ct = self.df_ct.sort_values(by='TI002', ascending=False) # 排序最新
+        if self.df_ct is not None:
+            self.df_ct = self.df_ct.sort_values(by='TI002', ascending=False) # 排序最新
         # print(self.df_ct)
         # 標準廠商途程單價
         self.df_stmk = self.yst.stmk_to_df() # 標準廠商途程單價
@@ -509,7 +510,8 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
 
 def test1():
     # bom = COST('4A603001')
-    bom = COST('6AA03SA101AL1A01', pump_lock = True)
+    bom = COST('4B206018')
+    # bom = COST('6AA03SA101AL1A01', pump_lock = True)
     print(bom.error_dic())
 
     # bom = COST('8AC002', pump_lock = True)
