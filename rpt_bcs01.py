@@ -158,7 +158,7 @@ class Report_bcs01(tool_excel):
                     if all([bmr(gid,'pd_type')=='P', len(df_mk.index)==1,
                         mk_r[x_sqlcn['單位']]=='PCS']): # P採購件 且 宏觀製程僅1筆 且單位為PCS
                         pd_kg = pkg(gid)
-                        if pd_kg != '': # 有KG資料
+                        if all([mk_r[x_sqlcn['製程單價']]>0, pd_kg != '', pd_kg != 0]): #有單價 有KG資料
                             price_kg = round(float(mk_r[x_sqlcn['製程單價']])/float(pd_kg), 2)
                             write(crm+1, x_i[sn], f'({price_kg}/KG)', f11gr, alignment=ahr)
 
@@ -201,6 +201,16 @@ class Report_bcs01(tool_excel):
                     # 檢查 # 最後N筆交易紀錄 是否已改變供應商
                     if pdno in list(err_dic['err8'].keys()):
                         sn='簡稱'; cj=x_i[sn]; fill(crm, cj, fillcolor=cf_khaki); comm(crm, cj, err_dic['err8'][pdno]['mssage'])
+
+                    # 檢查 # 採購加工單位
+                    if pdno in list(err_dic['err9'].keys()):
+                        if err_dic['err9'][pdno]['mk_i'] == mk_i:
+                            sn='單位'; cj=x_i[sn]; fill(crm, cj); comm(crm, cj, err_dic['err9'][pdno]['mssage'])
+
+                    # 檢查 # 採購加工單價
+                    if pdno in list(err_dic['err10'].keys()):
+                        if err_dic['err10'][pdno]['mk_i'] == mk_i:
+                            sn='製程單價'; cj=x_i[sn]; fill(crm, cj, fillcolor=cf_khaki); comm(crm, cj, err_dic['err10'][pdno]['mssage'])
 
                 # 檢查
                 if gid in err_dic['err1']:
@@ -249,11 +259,12 @@ class Report_bcs01(tool_excel):
 
 def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
-    # Report_bcs01(fileName, '4A603001')
-    Report_bcs01(fileName, '4B206018')
+    # Report_bcs01(fileName, '4B103021')
+    # Report_bcs01(fileName, '4B206018')
     # Report_bcs01(fileName, '5Y0000002')
     # Report_bcs01(fileName, '6AA03SA101AL1A01')
-    # Report_bcs01(fileName, '8FC004', True)
+    Report_bcs01(fileName, '8DC008', True)
+    
     print('ok')
 
 if __name__ == '__main__':

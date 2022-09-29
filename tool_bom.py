@@ -30,6 +30,7 @@ class BOM(): # 產生bom to_df() 方法
             'bom_extend':    '展階', # True需要展階 False不需要展階
             'pd_name':       '品名',
             'pd_spec':       '規格',
+            'pd_unit':       '庫存單位',
             'pd_type':       '品號屬性',
             'supply':        '主供應商',
             'last_price':    '最新進價(本國幣別NTD)',
@@ -63,6 +64,7 @@ class BOM(): # 產生bom to_df() 方法
             'MD007': 'bom_den', #'底數',
             'MB002': 'pd_name', #'品名'
             'MB003': 'pd_spec', #'規格',
+            'MB004': 'pd_unit', #'庫存單位',
             'MB025': 'pd_type', #'品號屬性',
             'MB032': 'supply', #'主供應商',
             'MB050': 'last_price', #'最新進價(本國幣別NTD)',
@@ -116,6 +118,7 @@ class BOM(): # 產生bom to_df() 方法
             'bom_extend':    True, #'展階' True需要展階 False不需要展階
             'pd_name':       dic['MB002'], #'品名',
             'pd_spec':       dic['MB003'], #'規格',
+            'pd_unit':       dic['MB004'], #'庫存單位',
             'pd_type':       dic['MB025'], #'品號屬性',
             'supply':        dic['MB032'], #'主供應商',
             'last_price':    dic['MB050'], #'最新進價(本國幣別NTD)',
@@ -241,15 +244,15 @@ class BOM(): # 產生bom to_df() 方法
                     # arr_bottom.append(r['gid']) # 本階層 大於等於 下一筆的階層 必為最下階
 
 def test1():
-    # bom = BOM('4A306001')
-    # bom = BOM('5A010100005')
+    # bom = BOM('4B206012')
+    bom = BOM('5A010100005')
     # bom = BOM('6AA03FA001EL1A01')
     # bom = BOM('7AA01001A01', pump_lock = True)
-    bom = BOM('8AC024', pump_lock = True)
+    # bom = BOM('8AC024', pump_lock = True)
     df = bom.to_df()
     pd.set_option('display.max_rows', df.shape[0]+1) # 顯示最多列
     pd.set_option('display.max_columns', None) #顯示最多欄位
-    df1 = df[['gid','pdno', 'pid','bom_level','bom_extend','pd_type','sales_price_1']]
+    df1 = df[['gid','pdno', 'pid','pd_name','bom_extend','pd_type','pd_unit']]
     print(df1)
 
 

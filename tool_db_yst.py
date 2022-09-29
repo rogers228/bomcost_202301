@@ -50,12 +50,10 @@ class db_yst(): #讀取excel 單一零件
         # lis.append('1020010')
         # return lis
 
-        
-
     def get_pd_one_to_dic(self, pdno):
         s = """
         SELECT TOP 1
-        RTRIM(MB001) AS MB001,MB002,MB003,MB025,MB032,MB050,MB010,MB011,MB053
+        RTRIM(MB001) AS MB001,MB002,MB003,MB004,MB025,MB032,MB050,MB010,MB011,MB053
         FROM INVMB
         WHERE MB001 = '{0}'
         """
@@ -72,6 +70,7 @@ class db_yst(): #讀取excel 單一零件
                 BOMMD.MD007,
                 INVMB.MB002,
                 INVMB.MB003,
+                INVMB.MB004,
                 INVMB.MB025,
                 INVMB.MB032,
                 INVMB.MB050,
@@ -119,6 +118,16 @@ class db_yst(): #讀取excel 單一零件
         # MF017 加工單位
         df = self.get_bmk('92N001','02')
         df = df[['MF004', 'MF017']]
+        return df if len(df.index) > 0 else None
+
+    def stpk_to_df(self):
+        # 標準廠商採購加工單位
+        # 例如 達輝 固定加工單位為KG
+        # 人員可在系統維護
+        # MF006 廠商代號
+        # MF017 加工單位
+        df = self.get_bmk('92N001','03')
+        df = df[['MF006', 'MF017']]
         return df if len(df.index) > 0 else None
 
     def wget_imd(self, pdno_arr=''):
@@ -185,7 +194,7 @@ class db_yst(): #讀取excel 單一零件
         pdno_arr = str(pdno_arr).replace(' ','') # 去除空格
         pdno_inSTR = "('" + "','".join(pdno_arr.split(',')) + "')"
         s = """
-            SELECT TH004,TG005,TG007,TH018,TH008,TH001,TH002
+            SELECT TH004,TG005,TG007,TH018,TH019,TH016,TH056,TH007,TH008,TH001,TH002
             FROM PURTH
                 LEFT JOIN PURTG ON TH001=TG001 AND TH002=TG002
             WHERE
@@ -223,11 +232,11 @@ class db_yst(): #讀取excel 單一零件
 def test1():
     db = db_yst()
     # df = db.get_bom('4A603001')
-    df = db.get_puilast_to_df('3AAB1AA009',3)
+    df = db.stpk_to_df()
     print(df)
     # print(db.get_pur_ma002('1020010'))
     # print(db.wget_cti('4A428003'))
-    # print(db.wget_pui('3AAA1AA229'))
+    # print(db.wget_pui('4B103021-01,3AAA1AA212'))
 
 
 if __name__ == '__main__':

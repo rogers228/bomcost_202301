@@ -18,13 +18,20 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         # print('pdno_arr_str:', pdno_arr_str)
         self.df_md = self.yst.wget_imd(pdno_arr_str) #所有品號單位換算
         # print(self.df_md)
+
         self.df_ct = self.yst.wget_cti(pdno_arr_str) #所有品號 托外最新進貨
         if self.df_ct is not None:
             self.df_ct = self.df_ct.sort_values(by='TI002', ascending=False) # 排序最新
+
+        self.df_pu = self.yst.wget_pui(pdno_arr_str) #所有品號 採購最新進貨
+        if self.df_pu is not None:
+            self.df_pu = self.df_pu.sort_values(by='TH002', ascending=False) # 排序最新
+
         # print(self.df_ct)
         # 標準廠商途程單價
         self.df_stmk = self.yst.stmk_to_df() # 標準廠商途程單價
         self.df_strk = self.yst.strk_to_df() # 標準途程加工單位
+        self.df_stpk = self.yst.stpk_to_df() # 標準廠商採購加工單位
         self.lis_puk = self.yst.get_purluck_to_list() # 禁止交易供應商
         self.error_information = {} # 異常信息
 
@@ -77,7 +84,21 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                     'mk_i':
                     'message'
                 } 
-            }            
+            }
+            'err9': 該製程(採購)  加工單位 不符合 第一順位標準廠商採購加工單未  第二順位最後進貨計價單價
+            {
+                'pdno':{
+                    'mk_i':
+                    'message'
+                } 
+            }
+            'err10': 該製程(採購)  不符合 最新單位進價
+            {
+                'pdno':{
+                    'mk_i':
+                    'message'
+                } 
+            }
         }
         '''
 
@@ -88,7 +109,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         return self.dic_bmk[pdno] # dict key: pdno,   value: ddaaframe 
 
     def dlookup_pdmd(self, pdno, column):
-        # 從 pdno 找對應的 column欄位名稱的值value
+        # 從 pdno 找對應的 column欄位名稱的值value (首筆)
         # MD001     MD002  MD003  MD004
         # 4A306025  KG     4.160    1.0
         result = ''
@@ -125,6 +146,18 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             result = df_w.iloc[0]['MF017']
         return result
 
+    def dlookup_stpk(self, mf006):
+        # 從1個條件: 廠商代號mf006
+        # 找到 MF017 加工單位
+        result = ''
+        df = self.df_stpk
+        if df is None:
+            return result
+        df_w = df.loc[df['MF006']==mf006]
+        if len(df_w.index)>0:
+            result = df_w.iloc[0]['MF017']
+        return result
+
     def dlookup_pdct(self, pdno, ti015, column):
         # 從2個條件: 品號pdno, 製程代號ti015
         # 找到第一筆(最新)對應的 column欄位名稱的值value
@@ -136,6 +169,34 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         if df is None:
             return result
         df_w = df.loc[(df['TI004']==pdno) & (df['TI015']==ti015)]
+        if len(df_w.index)>0:
+            result = df_w.iloc[0][column]
+        return result
+
+    # def dlookup_pdpu(self, pdno, tg005, column):
+    #     # 從2個條件: 品號pdno, 廠商代號tg005
+    #     # 找到第一筆(最新)對應的 column欄位名稱的值value
+    #     # 品號  廠商代號 幣別  原幣單位進價(單價) 計價數量 計價單位 進貨數量 單位  進貨單別 單號
+    #     # TH004,TG005,  TG007,TH018,           TH016,  TH056,   TH007,  TH008,TH001,  TH002
+    #     result = ''
+    #     df = self.df_pu
+    #     if df is None:
+    #         return result
+    #     df_w = df.loc[(df['TH004']==pdno) & (df['TG005']==tg005)]
+    #     if len(df_w.index)>0:
+    #         result = df_w.iloc[0][column]
+    #     return result
+
+    def dlookup_pdpu(self, pdno, column):
+        # 從1個條件: 品號pdno  (不分供應商)
+        # 找到第一筆(最新)對應的 column欄位名稱的值value
+        # 品號  廠商代號 幣別  原幣單位進價(單價) 計價數量 計價單位 進貨數量 單位  進貨單別 單號
+        # TH004,TG005,  TG007,TH018,           TH016,  TH056,   TH007,  TH008,TH001,  TH002
+        result = ''
+        df = self.df_pu
+        if df is None:
+            return result
+        df_w = df.loc[df['TH004']==pdno]
         if len(df_w.index)>0:
             result = df_w.iloc[0][column]
         return result
@@ -298,7 +359,9 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         pmd_tolist = self.dlookup_pdmd_tolist # 從 pdno 找所有換算單位
         stmk = self.dlookup_stmk     # 找標準廠商途程單價
         strk = self.dlookup_strk     # 找標準途程加工單位
+        stpk = self.dlookup_stpk     # 找標準廠商採購加工單位
         pdct = self.dlookup_pdct     # 找托外最新進價
+        pdpu = self.dlookup_pdpu     # 找採購最新進價
 
         # step 1
         dic_msy = {} #　所有M,S,Y品號的產品製程
@@ -334,14 +397,23 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             }
         lis_columns = list(dic_columns.keys())
         for i, r in df.iterrows():
+            dic_err3 = {}; lis_err3 = [] #檢查 3 有製程單位卻無換算單位
             # 宏觀的產品製程( 包含產品製程資料 及 採購資料)  to_df() 方法
             df_m = pd.DataFrame(None, columns = list(dic_columns.keys())) # None dataframe
             if r['pd_type']=='P': # 品號屬性 P.採購件
+                # print('pdno:', r['pdno'])
+                # print('supply:',r['supply'])
+                # print('pd_unit:',r['pd_unit'])
+                # p_unit = pdpu(r['pdno'], r['supply'],'TH056') # 加工單位第一順位 為進貨計價單位
+                # print('p_unit:', p_unit)                
+                p_unit = pmd(r['pdno'], 'MD002') # 採購加工單位第一順位 為單位換算
+                if p_unit == '':
+                    p_unit = r['pd_unit'] # 加工單位第二順位 為庫存單位
                 dic_p = {
                 'MW002': '採購', # 製程
                 'MF006': r['supply'], # 供應商代號
                 'MF007': self.yst.get_pur_ma002(r['supply']), # 供應商簡稱'
-                'MF017': 'PCS', # 加工單位
+                'MF017': p_unit, # 加工單位 第一順位單位換算 第二順位庫存單位
                 'MF018': r['last_price'] # 最新進價(本國幣別NTD)
                 }
                 df_m = df_m.append(dic_p, ignore_index=True) # 20220915
@@ -351,7 +423,6 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                 df_m = df_m.append(df_make, ignore_index = True) # 20220915
 
                 # 檢查 3 有製程單位卻無換算單位
-                dic_err3 = {}; lis_err3 = []
                 lis_pmd = pmd_tolist(r['pdno']) # 該品號所有換算單位
                 df_w = df_make.loc[df_make['MF017']!='PCS'] # 非PCS的加工單為
                 lis_mk = []
@@ -375,17 +446,43 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         info['err3'] = dic_err3
 
         # step 3 清洗 複製 SS001, SS002, SS003
-        ed4={}; ed5={}; ed6={}; ed7={} # error dictionary
+        ed4={}; ed5={}; ed6={}; ed7={}; ed9={}; ed10={} # error dictionary
         dic_all_new = {}
         for pdno, df_s in dic_all.items():
             df_new = df_s.copy()
-            em4={}; em5={}; em6={}; em7={} # error message
+            em4={}; em5={}; em6={}; em7={}; em9={}; em10={}  # error message
             for i, r in df_s.iterrows():
                 f_ss001 = 0 # 製程單價
                 f_ss031 = 0 # 最新進價
 
                 if r['MW002'] in ['採購','銷售']:
                     f_ss001 = r['MF018']
+
+                    # 檢查採購 最新單位進價(以計價單位為主的單價)
+                    if r['MW002'] in ['採購']:
+                        f_ss031 = pdpu(pdno,'TH018') # 採購最後進貨 原幣單位進價
+                        if all([f_ss031!='',f_ss031!=r['MF018']]):
+                            em10['mk_i']=i
+                            th001 = pdpu(pdno, 'TH001')
+                            th002 = pdpu(pdno, 'TH002')
+                            th007 = pdpu(pdno, 'TH007')
+                            th008 = pdpu(pdno, 'TH008')
+                            th056 = pdpu(pdno, 'TH056')
+                            th016 = pdpu(pdno, 'TH016')
+                            th019 = pdpu(pdno, 'TH019')
+                            tg005 = pdpu(pdno, 'TG005')
+                            em10['mssage'] = f'進貨{th001}-{th002}\n已有最新原幣單位進價:{f_ss031}\n計價數量{th016},計價單位{th056}\n原幣進貨金額{th019}\n進貨數量{th007}{th008}'
+
+                        # 檢查採購加工單位
+                        last_mf017 = pdpu(pdno, 'TH056') # 採購最後進貨計價單位
+                        if last_mf017:
+                            if last_mf017 != r['MF017']:
+                                em9['mk_i']=i; em9['mssage']=f'不符合採購最後進貨計價單位:{last_mf017}' # 第二順位
+                        st_mf017 = stpk(r['MF006']) # 標準廠商採購工單位
+                        if st_mf017:
+                            if st_mf017 != r['MF017']:
+                                em9['mk_i']=i; em9['mssage']=f'不符合標準廠商採購工單位:{st_mf017}' # 第一順位
+
                 else:
                     # 製造加工
                     st_mf017 = strk(r['MF004']) # 標準途程加工單位
@@ -412,7 +509,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                                 ti002 = pdct(pdno, r['MF004'],'TI002')
                                 ti023 = pdct(pdno, r['MF004'],'TI023')
                                 th005 = pdct(pdno, r['MF004'],'TH005')
-                                em5['mssage'] = f'進貨{ti001}-{ti002}\n已有最新進價:{f_ss031}\n計價單位{ti023}\n廠商代號:{th005}'
+                                em5['mssage'] = f'進貨{ti001}-{ti002}\n已有最新進價:{f_ss031}\n計價單位{ti023}'
                     else:
                         f_ss001 = 0
                         f_ss031 = 0
@@ -441,11 +538,15 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             if len(em5)>0: ed5[pdno] = em5 # 托外最新加工單價 未維護
             if len(em6)>0: ed6[pdno] = em6 # 不吻合 標準廠商加工單價
             if len(em7)>0: ed7[pdno] = em7 # 不吻合 標準途程加工單位
+            if len(em9)>0: ed9[pdno] = em9 # 不吻合 採購加工單位
+            if len(em10)>0: ed10[pdno] = em10 # 未更新 採購最新進價
 
         info['err4']=ed4
         info['err5']=ed5
         info['err6']=ed6
-        info['err7']=ed7 # error info
+        info['err7']=ed7
+        info['err9']=ed9
+        info['err10']=ed10
         self.dic_bmk = dic_all_new
 
         # debug
@@ -487,6 +588,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                     ed8[pdno] = em8
         info['err8']=ed8
 
+        # 單位換算不可以為1
     def find_kg(self, pd_spec): # 正則找KG
         mRegex = re.compile(r"(?<=@)\d*\.*\d*(?=KG)")
         match = mRegex.search(pd_spec)
@@ -509,15 +611,15 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         self.df_pkg = df1
 
 def test1():
-    # bom = COST('4A603001')
-    bom = COST('4B206018')
+    bom = COST('4B920002')
+    # bom = COST('4B206018')
     # bom = COST('6AA03SA101AL1A01', pump_lock = True)
-    print(bom.error_dic())
-
     # bom = COST('8AC002', pump_lock = True)
+    # bom = COST('8DC008', pump_lock = True)
+    print(bom.error_dic())
     # bom = COST('4A428003')
-    lis = bom.group_to_list()
-    print(lis)
+    # lis = bom.group_to_list()
+    # print(lis)
 
 if __name__ == '__main__':
     test1()
