@@ -194,7 +194,7 @@ class db_yst(): #讀取excel 單一零件
         pdno_arr = str(pdno_arr).replace(' ','') # 去除空格
         pdno_inSTR = "('" + "','".join(pdno_arr.split(',')) + "')"
         s = """
-            SELECT TH004,TG005,TG007,TH018,TH019,TH016,TH056,TH007,TH008,TH001,TH002
+            SELECT TH004,TG005,TG007,TG008,TH018,TH019,TH016,TH056,TH007,TH008,TH001,TH002
             FROM PURTH
                 LEFT JOIN PURTG ON TH001=TG001 AND TH002=TG002
             WHERE
@@ -236,7 +236,7 @@ def test1():
     print(df)
     # print(db.get_pur_ma002('1020010'))
     # print(db.wget_cti('4A428003'))
-    # print(db.wget_pui('4B103021-01,3AAA1AA212'))
+    print(db.wget_pui('4B103021-01,4A312004'))
 
 
 if __name__ == '__main__':
