@@ -212,6 +212,16 @@ class Report_bcs01(tool_excel):
                         if err_dic['err10'][pdno]['mk_i'] == mk_i:
                             sn='製程單價'; cj=x_i[sn]; fill(crm, cj, fillcolor=cf_khaki); comm(crm, cj, err_dic['err10'][pdno]['mssage'])
 
+                    # 檢查 # 未設定單位換算
+                    if pdno in list(err_dic['err11'].keys()):
+                        if err_dic['err11'][pdno]['mk_i'] == mk_i:
+                            sn='品號'; cj=x_i[sn]; fill(crm, cj); comm(crm, cj, err_dic['err11'][pdno]['mssage'])
+
+                    # 檢查 # 未更新單位換算
+                    if pdno in list(err_dic['err12'].keys()):
+                        if err_dic['err12'][pdno]['mk_i'] == mk_i:
+                            sn='品名規格'; cj=x_i[sn]; fill(crm+3, cj); comm(crm+3, cj, err_dic['err12'][pdno]['mssage'])
+
                 # 檢查
                 if gid in err_dic['err1']:
                     sn='品名規格'; cj=x_i[sn]; fill(cr_pd+2,cj); comm(cr_pd+2,cj, '最下階應為P件，或應再建立P件為子件')
@@ -259,11 +269,11 @@ class Report_bcs01(tool_excel):
 
 def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
-    # Report_bcs01(fileName, '4B103021')
-    # Report_bcs01(fileName, '4B206018')
+    # Report_bcs01(fileName, '4A312004')
+    # Report_bcs01(fileName, '4B104018-01')
     # Report_bcs01(fileName, '5A220100004')
-    Report_bcs01(fileName, '6AA03SA101AL1A01')
-    # Report_bcs01(fileName, '8FC025', True)
+    # Report_bcs01(fileName, '6AA03SA101AL1A01')
+    Report_bcs01(fileName, '8FC026', True)
     
     print('ok')
 

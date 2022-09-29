@@ -100,6 +100,20 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                     'message'
                 } 
             }
+            'err11': 該製程(採購)  未維護PCS以外的單位換算
+            {
+                'pdno':{
+                    'mk_i':
+                    'message'
+                } 
+            }
+            'err12': 該製程(採購)  單位換算不符合最新進貨
+            {
+                'pdno':{
+                    'mk_i':
+                    'message'
+                } 
+            }            
         }
         '''
 
@@ -447,11 +461,11 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         info['err3'] = dic_err3
 
         # step 3 清洗 複製 SS001, SS002, SS003
-        ed4={}; ed5={}; ed6={}; ed7={}; ed9={}; ed10={} # error dictionary
+        ed4={}; ed5={}; ed6={}; ed7={}; ed9={}; ed10={}; ed11={}; ed12={} # error dictionary
         dic_all_new = {}
         for pdno, df_s in dic_all.items():
             df_new = df_s.copy()
-            em4={}; em5={}; em6={}; em7={}; em9={}; em10={}  # error message
+            em4={}; em5={}; em6={}; em7={}; em9={}; em10={}; em11={}; em12={}  # error message
             for i, r in df_s.iterrows():
                 f_ss001 = 0 # 製程單價
                 f_ss031 = 0 # 最新進價(鼎新)
@@ -462,30 +476,50 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                     # 檢查採購 最新單位進價(以計價單位為主的單價)
                     if r['MW002'] in ['採購']:
                         f_ss031 = pdpu(pdno,'TH018') # 採購最後進貨 原幣單位進價
+                        th001 = pdpu(pdno, 'TH001')
+                        th002 = pdpu(pdno, 'TH002')
                         th007 = pdpu(pdno, 'TH007')
+                        th008 = pdpu(pdno, 'TH008')
+                        th016 = pdpu(pdno, 'TH016')
                         th019 = pdpu(pdno, 'TH019')
+                        th056 = pdpu(pdno, 'TH056')
                         tg005 = pdpu(pdno, 'TG005')
                         tg007 = pdpu(pdno, 'TG007')
                         tg008 = pdpu(pdno, 'TG008')
                         try:
-                            f_ss042 =round(th019*tg008/th007,3) # 採購最後進貨單價(自算本弊) 等同
+                            # print('pdno:', pdno)
+                            # f_ss042 =round(th019*tg008/th007,3) # 採購最後進貨單價(自算本弊) 等同
+                            # f_ss042 =round(th019*tg008/th016,3) # 採購最後進貨單價(自算本弊) 等同
+                            f_ss042 =round(th016*f_ss031*tg008/th016,3) # 採購最後進貨單價(自算本弊) 等同
+                                          #計價數量*原幣單位進價*匯率/計價數量
                         except:
                             f_ss042 = 0 # 沒有進貨
-                            # print('pdno:', pdno)
-                            # print('th019:', th019)
-                            # print('tg008:', tg008)
-                            # print('th007:', th007)
-                            # print('f_ss031:', f_ss031)
-                            # print('f_ss042:', f_ss042)
-                            # if all([f_ss031!='',f_ss031!=r['MF018']]):
+                        # print('pdno:', pdno)
+                        # print('th019:', th019)
+                        # print('tg008:', tg008)
+                        # print('th016:', th016)
+                        # print('f_ss042:', f_ss042)
+                        # print('f_ss031:', f_ss031)
+                        # print('f_ss042:', f_ss042)
+
+                        # 有進貨就檢查
                         if all([f_ss042!=0, ceil(f_ss042)!=ceil(r['MF018'])]):
                             em10['mk_i']=i
-                            th001 = pdpu(pdno, 'TH001')
-                            th002 = pdpu(pdno, 'TH002')
-                            th008 = pdpu(pdno, 'TH008')
-                            th056 = pdpu(pdno, 'TH056')
-                            th016 = pdpu(pdno, 'TH016')
-                            em10['mssage'] = f'進貨{th001}-{th002}\n已有最新本弊進價:{f_ss042}\n計價數量{th016},計價單位{th056}\n原幣進貨金額{th019}{tg007}({tg008})\n進貨數量{th007}{th008}'
+
+                            em10['mssage'] = f'進貨{th001}-{th002}\n最新進價:{f_ss042}\n計價數量{th016},計價單位{th056}\n原幣進貨金額{th019}{tg007}({tg008})\n進貨數量{th007}{th008}'
+
+                            # 檢查PCS以外的單位
+                            if r['MF017'] != 'PCS':
+                                curr_md002 = pmd(pdno,'MD002') # 目前換算單位
+                                if curr_md002 == '':
+                                    em11['mk_i']=i; em11['mssage']=f"未設定單位換算:{r['MF017']}"
+                                else:
+                                    curr_md003 = pmd(pdno,'MD003')     # 目前換算分子
+                                    # print('th016:',th016)
+                                    # print('th007:',th007)
+                                    last_md003 = round(th016/th007, 3)  # 最新換算分子
+                                    if ceil(curr_md003) != ceil(last_md003):
+                                        em12['mk_i']=i; em12['mssage']=f"未更新單位換算:{last_md003}"
 
                         # 檢查採購加工單位
                         last_mf017 = pdpu(pdno, 'TH056') # 採購最後進貨計價單位
@@ -550,12 +584,14 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             dic_all_new[pdno] = df_new
 
             # error 
-            if len(em4)>0: ed4[pdno] = em4 # 禁止交易供應商 未更新
-            if len(em5)>0: ed5[pdno] = em5 # 托外最新加工單價 未維護
-            if len(em6)>0: ed6[pdno] = em6 # 不吻合 標準廠商加工單價
-            if len(em7)>0: ed7[pdno] = em7 # 不吻合 標準途程加工單位
-            if len(em9)>0: ed9[pdno] = em9 # 不吻合 採購加工單位
+            if len(em4)>0: ed4[pdno] = em4    # 禁止交易供應商 未更新
+            if len(em5)>0: ed5[pdno] = em5    # 托外最新加工單價 未維護
+            if len(em6)>0: ed6[pdno] = em6    # 不吻合 標準廠商加工單價
+            if len(em7)>0: ed7[pdno] = em7    # 不吻合 標準途程加工單位
+            if len(em9)>0: ed9[pdno] = em9    # 不吻合 採購加工單位
             if len(em10)>0: ed10[pdno] = em10 # 未更新 採購最新進價
+            if len(em11)>0: ed11[pdno] = em11 # 採購件 未設定換算單位
+            if len(em12)>0: ed12[pdno] = em12 # 採購件 未更新換算分子
 
         info['err4']=ed4
         info['err5']=ed5
@@ -563,6 +599,8 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         info['err7']=ed7
         info['err9']=ed9
         info['err10']=ed10
+        info['err11']=ed11
+        info['err12']=ed12
         self.dic_bmk = dic_all_new
 
         # debug
@@ -627,11 +665,11 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         self.df_pkg = df1
 
 def test1():
-    bom = COST('4A305004')
+    bom = COST('4B104018-01')
     # bom = COST('5A220100004')
     # bom = COST('6AA03SA101AL1A01', pump_lock = True)
     # bom = COST('8AC002', pump_lock = True)
-    # bom = COST('8DC008', pump_lock = True)
+    # bom = COST('8FC026', pump_lock = True)
     print(bom.error_dic())
     # bom = COST('4A428003')
     # lis = bom.group_to_list()
