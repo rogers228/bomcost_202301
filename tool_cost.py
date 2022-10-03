@@ -505,7 +505,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                                     em11['mk_i']=i; em11['mssage']=f"未設定單位換算:{r['MF017']}"
                                 else:
                                     curr_md003 = pmd(pdno,'MD003')     # 目前換算分子
-                                     last_md003 = round(th016/th007, 3)  # 最新換算分子
+                                    last_md003 = round(th016/th007, 3)  # 最新換算分子
                                     if ceil(curr_md003) != ceil(last_md003):
                                         em12['mk_i']=i; em12['mssage']=f"未更新單位換算:{last_md003}"
 
@@ -654,8 +654,8 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         self.df_pkg = df1
 
 def test1():
-    bom = COST('4A505051')
-    # bom = COST('5A220100004')
+    # bom = COST('4A505051')
+    bom = COST('6EB0028')
     # bom = COST('6AA03SA101AL1A01', pump_lock = True)
     # bom = COST('8AC002', pump_lock = True)
     # bom = COST('8FC026', pump_lock = True)
