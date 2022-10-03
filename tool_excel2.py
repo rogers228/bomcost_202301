@@ -137,6 +137,8 @@ class tool_excel(): #讀取excel 單一零件
     def c_comm(self, row, column, message):
         #註解
         comment = Comment(message, "Author")
+        comment.width = 300
+        comment.height = 150
         self.sh.cell(row, column).comment = comment
 
     def c_fill(self, row, column, fillcolor = cf_yellow):
