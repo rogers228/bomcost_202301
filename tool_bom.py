@@ -47,6 +47,8 @@ class BOM(): # 產生bom to_df() 方法
             'bom_type':      'bom架構屬性', #1正常件 2材料件 3虛設件
             'sales_price_1': '售價定價一',
             'bom_level_lowest': '最底階', # True False
+            'pur_unit':      '採購單位',
+            'sales_unit':    '銷售單位',
         }
 
     def get_pdbom_df(self, pdno, bom_level):
@@ -71,6 +73,8 @@ class BOM(): # 產生bom to_df() 方法
             'MB010': 'stant_mkpdno', #'標準途程品號',
             'MB011': 'stant_mkno', #'標準途程代號',
             'MB053': 'sales_price_1', #'售價定價一',
+            'MB155': 'pur_unit',   #'採購單位',
+            'MB156': 'sales_unit', #'銷售單位',
             }
         df = df.rename(columns=new_columns)
 
@@ -134,6 +138,8 @@ class BOM(): # 產生bom to_df() 方法
             'bom_type':      1, #'bom架構屬性', #1正常件 2材料件 3虛設件
             'sales_price_1': dic['MB053'], #'售價定價一',
             'bom_level_lowest': False, #'最底階' True False
+            'pur_unit':      dic['MB155'], #'採購單位',
+            'sales_unit':    dic['MB156'], #'銷售單位',
             }
         self.df_bom = self.df_bom.append(data_row, ignore_index=True) #新增首筆
 
@@ -244,19 +250,17 @@ class BOM(): # 產生bom to_df() 方法
                     # arr_bottom.append(r['gid']) # 本階層 大於等於 下一筆的階層 必為最下階
 
 def test1():
-    # bom = BOM('4B206012')
-    bom = BOM('5A010100005')
+    bom = BOM('4B101050')
+    # bom = BOM('5A010100005')
     # bom = BOM('6AA03FA001EL1A01')
     # bom = BOM('7AA01001A01', pump_lock = True)
     # bom = BOM('8AC024', pump_lock = True)
     df = bom.to_df()
     pd.set_option('display.max_rows', df.shape[0]+1) # 顯示最多列
     pd.set_option('display.max_columns', None) #顯示最多欄位
-    df1 = df[['gid','pdno', 'pid','pd_name','bom_extend','pd_type','pd_unit']]
+    # df1 = df[['gid','pdno', 'pid','pd_name','bom_extend','pd_type','pd_unit']]
+    df1 = df[['gid','pdno','pd_name','pd_type','pd_unit','pur_unit','sales_unit']]
     print(df1)
-
-
-
 
 if __name__ == '__main__':
     test1()        

@@ -58,7 +58,7 @@ class BMK(): #　產品製程資料 (僅鼎新資料)
         return self.df_bmk
 
 def test1():
-    mk = BMK('4A305003','01')
+    mk = BMK('4B101050','01')
     df = mk.to_df()
     pd.set_option('display.max_rows', df.shape[0]+1) # 顯示最多列
     pd.set_option('display.max_columns', None)       # 顯示最多欄位

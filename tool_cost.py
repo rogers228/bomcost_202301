@@ -418,15 +418,16 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             # 宏觀的產品製程( 包含產品製程資料 及 採購資料)  to_df() 方法
             df_m = pd.DataFrame(None, columns = list(dic_columns.keys())) # None dataframe
             if r['pd_type']=='P': # 品號屬性 P.採購件
-              
-                p_unit = pmd(r['pdno'], 'MD002') # 採購加工單位第一順位 為單位換算
+                
+                p_unit = r['pur_unit'] # 採購加工單位第一順位 為採購單位
+                # p_unit = pmd(r['pdno'], 'MD002') # 採購加工單位第一順位 為單位換算
                 if p_unit == '':
                     p_unit = r['pd_unit'] # 加工單位第二順位 為庫存單位
                 dic_p = {
                 'MW002': '採購', # 製程
                 'MF006': r['supply'], # 供應商代號
                 'MF007': self.yst.get_pur_ma002(r['supply']), # 供應商簡稱'
-                'MF017': p_unit, # 加工單位 第一順位單位換算 第二順位庫存單位
+                'MF017': p_unit, # 加工單位 第一順位採購單位 第二順位庫存單位
                 'MF018': r['last_price'] # 最新進價(本國幣別NTD)
                 }
                 df_m = df_m.append(dic_p, ignore_index=True) # 20220915
@@ -450,8 +451,8 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                 'MW002': '銷售', # 製程
                 'MF006': '', # 供應商代號
                 'MF007': 'YEOSEH', # 供應商簡稱'
-                'MF017': 'PCS', # 加工單位
-                'MF018': r['sales_price_1'] # 最新進價(本國幣別NTD)
+                'MF017': r['sales_unit'],   # 銷售單位
+                'MF018': r['sales_price_1'] # 售價定價一
                 }
                 df_m = df_m.append(dic_p, ignore_index=True)
 
@@ -654,8 +655,8 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         self.df_pkg = df1
 
 def test1():
-    # bom = COST('4A505051')
-    bom = COST('6EB0028')
+    bom = COST('4B101050')
+    # bom = COST('6EB0028')
     # bom = COST('6AA03SA101AL1A01', pump_lock = True)
     # bom = COST('8AC002', pump_lock = True)
     # bom = COST('8FC026', pump_lock = True)

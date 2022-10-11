@@ -53,7 +53,7 @@ class db_yst(): #讀取excel 單一零件
     def get_pd_one_to_dic(self, pdno):
         s = """
         SELECT TOP 1
-        RTRIM(MB001) AS MB001,MB002,MB003,MB004,MB025,MB032,MB050,MB010,MB011,MB053
+        RTRIM(MB001) AS MB001,MB002,MB003,MB004,MB025,MB032,MB050,MB010,MB011,MB053,MB155,MB156
         FROM INVMB
         WHERE MB001 = '{0}'
         """
@@ -76,7 +76,9 @@ class db_yst(): #讀取excel 單一零件
                 INVMB.MB050,
                 INVMB.MB010,
                 INVMB.MB011,
-                INVMB.MB053
+                INVMB.MB053,
+                INVMB.MB155,
+                INVMB.MB156
             FROM BOMMD
                 LEFT JOIN INVMB ON BOMMD.MD003 = INVMB.MB001
             WHERE MD001 = '{0}'

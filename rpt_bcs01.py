@@ -61,33 +61,36 @@ class Report_bcs01(tool_excel):
         # 基礎設定
         # name, width, sql_column_name
         lis_base = []; a = lis_base.append
-        a('序號,    15,  none') 
-        a('品號,    15,  none')
-        a('品名規格, 38, none') 
-        a('廠商,     8, MF006') 
-        a('簡稱,    12, MF007')
-        a('製號,     6, MF004')
-        a('製程,    17, MW002') 
-        a('製程敘述,15, MF008') 
-        a('單位,    6, MF017') 
-        a('製程單價, 10, SS001') 
-        a('單價,      7, SS002') 
-        a('工時批量,   10, MF019') 
-        a('固定人時,   10, F_MF009') 
-        a('固定機時,   10, F_MF024') 
-        a('總用量,     9, none') 
-        a('總單價,    9,  none') 
-        a('金額,      9,  none') 
-        a('試算,     14,  none') 
-        lis_e1, lis_e2, lis_e3 = [],[],[]
+        a('序號,     15,  none,') 
+        a('品號,     15,  none,')
+        a('品名規格, 38,  none,') 
+        a('廠商,      8, MF006,') 
+        a('簡稱,     12, MF007,')
+        a('製號,      6, MF004,')
+        a('製程,     17, MW002,') 
+        a('製程敘述, 15, MF008,') 
+        a('單位,      6, MF017, 採購件P:\n第一順位採購單位MB155\n第二順位庫存單位MB004\n加工件MSY:加工單位MF017\n銷售件Q:銷售單位MB156') 
+        a('製程單價, 10, SS001, 自製加工件MSY:產品途程備註MF023\n托外加工件MSY:產品途程加工單價MF018\n採購件P:最新進價(本國幣別NTD)MB050\n泵浦(品號6AA開頭&不展階):售價MB053') 
+        a('單價,      7, SS002, 統一換算為PCS單價') 
+        a('工時批量,  10, MF019,') 
+        a('固定人時,  10, F_MF009,') 
+        a('固定機時,  10, F_MF024,') 
+        a('總用量,     9,  none,') 
+        a('總單價,     9,  none,') 
+        a('金額,       9,  none,') 
+        a('試算,      14,  none,') 
+
+        lis_e1, lis_e2, lis_e3, lis_e4 = [],[],[],[]
         for e in lis_base:
-            [e1, e2, e3]= e.split(',')
+            [e1, e2, e3, e4]= e.split(',')
             lis_e1.append(e1.strip())
             lis_e2.append(int(e2.strip()))
             lis_e3.append(e3.strip())
+            lis_e4.append(e4.strip())
         self.xls_index =dict(zip(lis_e1, [e for e in range(1,len(lis_e1)+1)]))
         self.xls_width =dict(zip(lis_e1, lis_e2))
         self.xls_sqlcn =dict(zip(lis_e1, lis_e3))
+        self.xls_memo =dict(zip(lis_e1, lis_e4))
     def output(self):
         caption = 'BOM製程成本表' # 標題
         if True: # style, func
@@ -108,9 +111,12 @@ class Report_bcs01(tool_excel):
         x_i = self.xls_index
         x_width = self.xls_width
         x_sqlcn = self.xls_sqlcn
+        x_memo = self.xls_memo 
         cr=1; column_w(list(x_width.values())) # 設定欄寬
         for name, index in x_i.items():
             write(cr, index, name, f11, alignment=ah_wr, border=bt_border, fillcolor=cf_gray) # 欄位名稱
+            if x_memo[name] != '': comm(cr, index, x_memo[name])
+            # if name=='單位':  comm(cr, index, '採購件P:第一順位採購單位MB155,第二順位庫存單位MB004\n加工件M,S,Y:加工單位MF017\n銷售件Q:銷售單位MB156')
 
         total = 0 # 試算
         err_dic = self.bcs.error_dic()
@@ -269,10 +275,10 @@ class Report_bcs01(tool_excel):
 
 def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
-    # Report_bcs01(fileName, '4A505051')
+    Report_bcs01(fileName, '4A306001')
     # Report_bcs01(fileName, '4B104018-01')
     # Report_bcs01(fileName, '5A220100004')
-    Report_bcs01(fileName, '6EB0028')
+    # Report_bcs01(fileName, '6EB0028')
     # Report_bcs01(fileName, '8FC026', True)
     
     print('ok')
