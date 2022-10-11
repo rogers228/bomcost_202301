@@ -228,6 +228,11 @@ class Report_bcs01(tool_excel):
                         if err_dic['err12'][pdno]['mk_i'] == mk_i:
                             sn='品名規格'; cj=x_i[sn]; fill(crm+3, cj); comm(crm+3, cj, err_dic['err12'][pdno]['mssage'])
 
+                    # 檢查 # 採購件P採購單位與最新計價單位皆為PCS，卻有設定換算單位
+                    if pdno in list(err_dic['err13'].keys()):
+                        if err_dic['err13'][pdno]['mk_i'] == mk_i:
+                            sn='品名規格'; cj=x_i[sn]; fill(crm+3, cj, fillcolor=cf_khaki); comm(crm+3, cj, err_dic['err13'][pdno]['mssage'])
+
                 # 檢查
                 if gid in err_dic['err1']:
                     sn='品名規格'; cj=x_i[sn]; fill(cr_pd+2,cj); comm(cr_pd+2,cj, '最下階應為P件，或應再建立P件為子件')
@@ -275,7 +280,7 @@ class Report_bcs01(tool_excel):
 
 def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
-    Report_bcs01(fileName, '4A306001')
+    Report_bcs01(fileName, '4A302029')
     # Report_bcs01(fileName, '4B104018-01')
     # Report_bcs01(fileName, '5A220100004')
     # Report_bcs01(fileName, '6EB0028')

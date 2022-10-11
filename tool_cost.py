@@ -113,7 +113,14 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                     'mk_i':
                     'message'
                 } 
-            }            
+            },
+            'err13': 該製程(採購)  採購件P採購單位與最新計價單位皆為PCS，卻有設定換算單位
+            {
+                'pdno':{
+                    'mk_i':
+                    'message'
+                } 
+            },
         }
         '''
 
@@ -460,11 +467,11 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         info['err3'] = dic_err3
 
         # step 3 清洗 複製 SS001, SS002, SS003
-        ed4={}; ed5={}; ed6={}; ed7={}; ed9={}; ed10={}; ed11={}; ed12={} # error dictionary
+        ed4={}; ed5={}; ed6={}; ed7={}; ed9={}; ed10={}; ed11={}; ed12={}; ed13={} # error dictionary
         dic_all_new = {}
         for pdno, df_s in dic_all.items():
             df_new = df_s.copy()
-            em4={}; em5={}; em6={}; em7={}; em9={}; em10={}; em11={}; em12={}  # error message
+            em4={}; em5={}; em6={}; em7={}; em9={}; em10={}; em11={}; em12={}; em13={}  # error message
             for i, r in df_s.iterrows():
                 f_ss001 = 0 # 製程單價
                 f_ss031 = 0 # 最新進價(鼎新)
@@ -474,6 +481,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                     # print('f_ss001:', f_ss001) # 製程單價
                     # 檢查採購 最新單位進價(以計價單位為主的單價)pdno
                     if r['MW002'] in ['採購']:
+                        # print('pdno11:', pdno)
                         last_pu = pdpu_dic(pdno) # 採購最後進貨
                         f_ss031 = last_pu.get('TH018',0) # 採購最後進貨 原幣單位進價
                         th001 = last_pu.get('TH001','') # 單別
@@ -492,16 +500,18 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                                           #計價數量*原幣單位進價*匯率/計價數量
                         except:
                             f_ss042 = 0 # 沒有進貨
-
+                        # print('f_ss042:', f_ss042)
                         # 有進貨就檢查
+                        curr_md002 = pmd(pdno,'MD002') # 目前換算單位
+                        if all([f_ss042!=0, r['MF017']=='PCS', th056=='PCS']): # 單位與計價單位皆為PCS
+                            if curr_md002 != 'PCS': # 卻有換算單位
+                                em13['mk_i']=i; em13['mssage']=f"採購單位與最新計價單位皆為PCS\n卻有單位換算{curr_md002}\n有可能是複製品號時造成，建議刪除"
+                                # print(em13['mssage'])
+
                         if all([f_ss042!=0, ceil(f_ss042)!=ceil(r['MF018'])]):
                             em10['mk_i']=i
-
                             em10['mssage'] = f'進貨{th001}-{th002}\n最新進價:{f_ss042}\n計價數量{th016},計價單位{th056}\n原幣進貨金額{th019}{tg007}({tg008})\n進貨數量{th007}{th008}'
-
-                            # 檢查PCS以外的單位
                             if r['MF017'] != 'PCS':
-                                curr_md002 = pmd(pdno,'MD002') # 目前換算單位
                                 if curr_md002 == '':
                                     em11['mk_i']=i; em11['mssage']=f"未設定單位換算:{r['MF017']}"
                                 else:
@@ -509,6 +519,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                                     last_md003 = round(th016/th007, 3)  # 最新換算分子
                                     if ceil(curr_md003) != ceil(last_md003):
                                         em12['mk_i']=i; em12['mssage']=f"未更新單位換算:{last_md003}"
+
 
                         # 檢查採購加工單位
                         # last_mf017 = pdpu(pdno, 'TH056') # 採購最後進貨計價單位
@@ -582,6 +593,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             if len(em10)>0: ed10[pdno] = em10 # 未更新 採購最新進價
             if len(em11)>0: ed11[pdno] = em11 # 採購件 未設定換算單位
             if len(em12)>0: ed12[pdno] = em12 # 採購件 未更新換算分子
+            if len(em13)>0: ed13[pdno] = em13 # 採購件 採購單位與計價單位皆為PCS卻有換算單位
 
         info['err4']=ed4
         info['err5']=ed5
@@ -591,6 +603,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         info['err10']=ed10
         info['err11']=ed11
         info['err12']=ed12
+        info['err13']=ed13
         self.dic_bmk = dic_all_new
 
         # debug
@@ -655,15 +668,15 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         self.df_pkg = df1
 
 def test1():
-    bom = COST('4B101050')
+    bom = COST('4A302029')
     # bom = COST('6EB0028')
     # bom = COST('6AA03SA101AL1A01', pump_lock = True)
     # bom = COST('8AC002', pump_lock = True)
     # bom = COST('8FC026', pump_lock = True)
     print(bom.error_dic())
     # bom = COST('4A428003')
-    # lis = bom.group_to_list()
-    # print(lis)
+    lis = bom.group_to_list()
+    print(lis)
 
 if __name__ == '__main__':
     test1()
