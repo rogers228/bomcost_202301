@@ -37,8 +37,8 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         self.error_information = {} # 異常信息
 
         self.comp_1() # 計算成本群組 rerutn  self.cost_group_list
+        self.comp_4() # 解析產品規格KG
         self.comp_2() # 計算所有製程成本 rerutn  self.dic_bmk, self.dic_gid_pdno
-        self.comp_4() # 估算材料單價
         self.comp_3() # 檢查資料異常
 
     def error_dic(self):
@@ -253,11 +253,24 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         return result
 
     def dlookup_gid_pkg(self, gid):
+        # 從品號基本資料中的 規格欄位裡 以re解析出KG
         # 從 gid 找kg的值value
         result = ''
         df = self.df_pkg
         if gid in df['gid'].tolist():
             result = df.loc[df['gid']==gid]['p_kg'].item()
+        return result
+
+    def dlookup_pkg(self, pdno):
+        # 從品號基本資料中的 規格欄位裡 以re解析出KG
+        # 從品號pdno 找kg的值value
+        result = ''
+        df = self.df_pkg
+        if df is None:
+            return result
+        df_w = df.loc[df['pdno']==pdno]
+        if len(df_w.index)>0:
+            result = df_w.iloc[0]['p_kg']
         return result
 
     def isRegMath_float(self,findStr): #返回第一個被找到的數字值
@@ -386,7 +399,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         stpk = self.dlookup_stpk     # 找標準廠商採購加工單位
         pdct = self.dlookup_pdct     # 找托外最新進價
         pdpu_dic = self.dlookdic_pdpu  # 找採購最新進貨
-        pkg = self.dlookup_gid_pkg
+        pkg = self.dlookup_pkg       # 找出規格裡的KG數
         # step 1
         dic_msy = {} #　所有M,S,Y品號的產品製程
         df_w = df[df['pd_type'].isin(['M','S','Y'])]
@@ -503,18 +516,22 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
 
                         # 有進貨就檢查
                         curr_md002 = pmd(pdno,'MD002') # 目前換算單位
+                        curr_md003 = pmd(pdno,'MD003') # 目前換算分子 (單位換算)
+                        is_pdkg_same = False # 規格kg與換算單位是否相同
                         if all([f_ss042!=0, r['MF017']=='PCS', th056=='PCS']): # 單位與計價單位皆為PCS
                             if all([curr_md002 != '',curr_md002 != 'PCS']): # 卻有換算單位
-                                # pkg()
-
-                                em13['mk_i']=i; em13['mssage']=f"採購單位與最新計價單位皆為PCS\n卻有單位換算{curr_md002}\n有可能是複製品號時造成，建議刪除"
-                                # print(em13['mssage'])
+                                pd_kg = pkg(pdno)
+                                if pd_kg == '': # 規格沒有kg數
+                                    em13['mk_i']=i; em13['mssage']=f"採購單位與最新計價單位皆為PCS\n卻有單位換算{curr_md002}\n有可能是複製品號時造成，建議刪除"
+                                else: # 規格有kg數
+                                    if ceil(curr_md003) == ceil(float(pd_kg)):
+                                        is_pdkg_same = True
+                                        em13 = {} # 規格kg 與 換算kg相同 清除錯誤
 
                         if f_ss042 != 0: # 有進貨
-                            curr_md003 = pmd(pdno,'MD003')      # 目前換算分子 (單位換算)
                             last_md003 = round(th016/th007, 3)  # 最新換算分子 (最新進貨)
                             if all([curr_md003!='', last_md003!='']):
-                                if all([ceil(curr_md003)!=ceil(last_md003)]):
+                                if all([ceil(curr_md003)!=ceil(last_md003), not is_pdkg_same]):
                                     em12['mk_i']=i; em12['mssage']=f"未更新單位換算:{last_md003}{th056}"
 
                         if all([f_ss042!=0, ceil(f_ss042)!=ceil(r['MF018'])]):
@@ -654,7 +671,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         match = mRegex.search(pd_spec)
         return match.group() if match else 0
 
-    def comp_4(self): # 估算材料單價
+    def comp_4(self): # 解析產品規格KG
         df = self.df_bom
         fkg = self.find_kg
         df_w = df.loc[(df['pd_type'] == 'P') &
@@ -667,17 +684,17 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         for i, r in df1.iterrows():
             lis.append(fkg(r['pd_spec']))
         df1.insert(len(df1.columns), 'p_kg', lis, True) #插在最後
-        print(df1)
         self.df_pkg = df1
 
 def test1():
     # bom = COST('4B103021')
-    # bom = COST('6EB0028')
-    # bom = COST('6AA03SA101AL1A01', pump_lock = True)
+    # bom = COST('5A160600033')
+    bom = COST('6AA0602800700001', pump_lock = True)
     # bom = COST('8AC002', pump_lock = True)
-    bom = COST('8FC026', pump_lock = True)
+    # bom = COST('8FC026', pump_lock = True)
     dic_err=bom.error_dic()
     print(dic_err)
+
     # for pdno, e in dic_err['err13'].items():
     #     print(pdno)
     #     print(e)

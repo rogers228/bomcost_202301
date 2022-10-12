@@ -47,7 +47,8 @@ class Report_bcs01(tool_excel):
         self.output()
         self.save_xls()
         self.open_xls() # 開啟
-
+        sys.exit()
+        
     def create_excel(self):
         wb = openpyxl.Workbook()
         sh = wb.active
@@ -282,9 +283,9 @@ def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
     # Report_bcs01(fileName, '4B103021')
     # Report_bcs01(fileName, '4B104018-01')
-    # Report_bcs01(fileName, '5A220100004')
+    # Report_bcs01(fileName, '5A090600003')
     # Report_bcs01(fileName, '6EB0028')
-    Report_bcs01(fileName, '8FC026', True)
+    Report_bcs01(fileName, '6AA01AA01A02L1B01', True)
     
     print('ok')
 
