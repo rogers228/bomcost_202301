@@ -281,11 +281,12 @@ class Report_bcs01(tool_excel):
 
 def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
-    # Report_bcs01(fileName, '4B103021')
+    # Report_bcs01(fileName, '3AAB1A3205')
+    # Report_bcs01(fileName, '4N0000308')
     # Report_bcs01(fileName, '4B104018-01')
     # Report_bcs01(fileName, '5A090600003')
     # Report_bcs01(fileName, '6EB0028')
-    Report_bcs01(fileName, '6AA01AA01A02L1B01', True)
+    Report_bcs01(fileName, '6N0000002', True)
     
     print('ok')
 

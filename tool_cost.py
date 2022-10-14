@@ -3,6 +3,7 @@ if True: # 固定引用開發環境 或 發佈環境 的 路徑
     config_path = os.getcwd() if os.getenv('COMPUTERNAME')=='VM-TESTER' else custom_path.custom_path['bomcost_202301'] # 目前路徑
     sys.path.append(config_path)
 
+import time
 import pandas as pd
 import re
 import array
@@ -389,6 +390,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         self.cost_group_list = lis_g
 
     def comp_2(self): # 計算宏觀產品製程成本
+        today = time.strftime("%Y%m%d", time.localtime()) # 今日日期8碼文字
         info = self.error_information # 異常信息
         df = self.df_bom
         re_f = self.isRegMath_float # re 文字找數字
@@ -400,6 +402,8 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         pdct = self.dlookup_pdct     # 找托外最新進價
         pdpu_dic = self.dlookdic_pdpu  # 找採購最新進貨
         pkg = self.dlookup_pkg       # 找出規格裡的KG數
+        pmb = self.yst.get_pmb_to_dic # 採購計價資料
+        cma = self.yst.get_cma_to_dic # 加工計價資料
         # step 1
         dic_msy = {} #　所有M,S,Y品號的產品製程
         df_w = df[df['pd_type'].isin(['M','S','Y'])]
@@ -490,10 +494,17 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                 f_ss031 = 0 # 最新進價(鼎新)
                 f_ss042 = 0 # 最新進價(自算)
                 if r['MW002'] in ['採購','銷售']:
-                    f_ss001 = r['MF018']
+                    f_ss001 = r['MF018'] # 第一順位 最新進價(本國幣別NTD) or 售價一
                     # print('f_ss001:', f_ss001) # 製程單價
                     # 檢查採購 最新單位進價(以計價單位為主的單價)pdno
                     if r['MW002'] in ['採購']:
+                        #第二順位 採購計價
+                        if f_ss001 == 0:
+                            dic_pmb = pmb(pdno,r['MF006'],today)
+                            if dic_pmb is not None:
+                                if dic_pmb['MB004'] == r['MF017']: # 計價單位與製程單位相符
+                                    f_ss001 = dic_pmb['MB011'] # 取採購計價資料
+
                         # print('pdno11:', pdno)
                         last_pu = pdpu_dic(pdno) # 採購最後進貨
                         f_ss031 = last_pu.get('TH018',0) # 採購最後進貨 原幣單位進價
@@ -551,7 +562,6 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                         if st_mf017:
                             if st_mf017 != r['MF017']:
                                 em9['mk_i']=i; em9['mssage']=f'不符合標準廠商採購工單位:{st_mf017}' # 第一順位
-
                 else:
                     # 製造加工
                     st_mf017 = strk(r['MF004']) # 標準途程加工單位
@@ -562,7 +572,16 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                     if r['MF005'] == '1':
                         f_ss001 = re_f(r['MF023']) # 1自製抓 MF023 備註
                     elif r['MF005'] == '2':
-                        f_ss001 = r['MF018']       # 2托外抓 MF018 加工單價
+                        # 加工單價(第一順位)
+                        f_ss001 = r['MF018']       # 2托外抓 MF018
+
+                        # 加工計價資料(第二順位)
+                        if f_ss001 == 0:
+                            dic_cma = cma(pdno,r['MF004'],r['MF006'],today)
+                            if dic_cma is not None:
+                                if dic_cma['MA004'] == r['MF017']: # 計價單位與製程單位相符
+                                    f_ss001 = dic_cma['MA005'] # 取加工計價資料
+
                         f_ss031 = pdct(pdno, r['MF004'],'TI024') # 托外最新進價
                         if not f_ss031:
                             f_ss031 = 0
@@ -687,9 +706,10 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         self.df_pkg = df1
 
 def test1():
-    # bom = COST('4B103021')
+    bom = COST('3AAB1A3205')
+    # bom = COST('4N0000308')
     # bom = COST('5A160600033')
-    bom = COST('6AA0602800700001', pump_lock = True)
+    # bom = COST('6AA0602800700001', pump_lock = True)
     # bom = COST('8AC002', pump_lock = True)
     # bom = COST('8FC026', pump_lock = True)
     dic_err=bom.error_dic()

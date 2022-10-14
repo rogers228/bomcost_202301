@@ -15,13 +15,6 @@ class db_yst(): #讀取excel 單一零件
         # self.cn = pyodbc.connect(config_conn_YST) # connect str 連接字串\
         self.cn = create_engine(URL.create('mssql+pyodbc', query={'odbc_connect': config_conn_YST})).connect()
     
-    # def isRegMath_float(self,findStr): #返回第一個被找到的數字值
-    #     if any([findStr == None, findStr =='']):
-    #         return ''
-    #     mRegex = re.compile(r'\d+\.?\d*')
-    #     match = mRegex.search(findStr)
-    #     return match.group() if match else '' 
-
     def get_pd_test(self, pdno):
         s = "SELECT MB001,MB002,MB003 FROM INVMB WHERE MB001 = '{0}'"
         s = s.format(pdno)
@@ -231,14 +224,71 @@ class db_yst(): #讀取excel 單一零件
         df = pd.read_sql(s, self.cn)
         return df if len(df.index) > 0 else None
 
+    def get_cma_to_dic(self, pdno, ma002, ma003, ma012):
+        # 取最新一筆加工計價資料 (定位為事先核定)
+        # 相對進貨單價(事後確定)
+        # MA001,  MA002, MA003,  MA004,   MA005,  MA012
+        # 品號 製程代號 廠商代號 計價單位 加工單價   生效日
+        s = """
+        SELECT TOP 1 
+            -- RTRIM(MA001) AS MA001,MA002,MA003,RTRIM(MA004) AS MA004,MA005,MA012
+            RTRIM(MA004) AS MA004,MA005
+        FROM MOCMA
+        WHERE
+            MA001 = '{0}' AND --品號
+            MA002 = '{1}' AND --製程代號
+            MA003 = '{2}' AND --廠商代號
+            MA012 <= '{3}'  --已生效
+        ORDER BY MA012 DESC 
+        """
+        s = s.format(pdno, ma002, ma003, ma012)
+        df = pd.read_sql(s, self.cn) #轉pd
+        return df.iloc[0].to_dict() if len(df.index) > 0 else None
+
+    def get_pmb_to_dic(self, pdno, mb002, mb014):
+        # 取最新一筆採購計價資料 (定位為事先核定)
+        # 相對進貨單價(事後確定)
+        # MB001,  MB002, MB003, MB004, MB011,  MB014 
+        # 品號  廠商代號 幣別  計價單位 採購單價 生效日
+        s = """
+        SELECT TOP 1 
+            RTRIM(MB004) AS MB004,MB011
+        FROM PURMB
+        WHERE
+            MB001 = '{0}' AND --品號
+            MB002 = '{1}' AND --廠商代號
+            MB014 <= '{2}'  --已生效
+        ORDER BY MB014 DESC 
+        """
+        s = s.format(pdno, mb002, mb014)
+        df = pd.read_sql(s, self.cn) #轉pd
+        return df.iloc[0].to_dict() if len(df.index) > 0 else None
+
+    def test_df(self):
+        s = """
+        SELECT MA001,MA002,MA003,MA004,MA005,MA012
+        FROM MOCMA
+        WHERE 
+            MA001 = '4N0000308' AND  --品號
+            MA002 = 'S073' AND
+            MA003 = '1020025' AND
+            MA012 <= '20221012'  --已生效
+        ORDER BY MA012 DESC
+        """
+        s = s.format('4DD0020085')
+        df = pd.read_sql(s, self.cn) #轉pd
+        return df if len(df.index) > 0 else None
+
 def test1():
     db = db_yst()
-    # df = db.get_bom('4A603001')
-    df = db.stpk_to_df()
+    # df = db.test_df()
+    # df = db.get_cma_to_dic('4N0000308','S073','1020025','20221010')
+
+    df = db.get_pmb_to_dic('3AAB1A3205','1030198','20221014')
     print(df)
-    # print(db.get_pur_ma002('1020010'))
-    # print(db.wget_cti('4A428003'))
-    print(db.wget_pui('4B103021-01,4A312004'))
+    print(df is None)
+    print(df is not None)
+
 
 
 if __name__ == '__main__':
