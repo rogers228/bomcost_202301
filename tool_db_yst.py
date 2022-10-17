@@ -266,14 +266,18 @@ class db_yst(): #讀取excel 單一零件
 
     def test_df(self):
         s = """
-        SELECT MA001,MA002,MA003,MA004,MA005,MA012
-        FROM MOCMA
+        SELECT
+            TA003,TA004,RTRIM(MW002) AS MW002 ,RTRIM(TA006) AS TA006,TA007,TA024,
+            SUBSTRING(TA008,1,4) +'/'+ SUBSTRING(TA008,5,2) +'/'+ SUBSTRING(TA008,7,2) AS TA008,
+            SUBSTRING(TA009,1,4) +'/'+ SUBSTRING(TA009,5,2) +'/'+ SUBSTRING(TA009,7,2) AS TA009,
+            TA010,TA011,TA012,TA034
+        FROM SFCTA
+            LEFT JOIN CMSMW ON SFCTA.TA004 = CMSMW.MW001
+
         WHERE 
-            MA001 = '4N0000308' AND  --品號
-            MA002 = 'S073' AND
-            MA003 = '1020025' AND
-            MA012 <= '20221012'  --已生效
-        ORDER BY MA012 DESC
+            TA001 = '5101' AND
+            TA002 = '20220418001'
+        ORDER BY TA003
         """
         s = s.format('4DD0020085')
         df = pd.read_sql(s, self.cn) #轉pd
@@ -281,13 +285,10 @@ class db_yst(): #讀取excel 單一零件
 
 def test1():
     db = db_yst()
-    # df = db.test_df()
+    df = db.test_df()
     # df = db.get_cma_to_dic('4N0000308','S073','1020025','20221010')
-
-    df = db.get_pmb_to_dic('3AAB1A3205','1030198','20221014')
+    # df = db.get_pmb_to_dic('3AAB1A3205','1030198','20221014')
     print(df)
-    print(df is None)
-    print(df is not None)
 
 
 

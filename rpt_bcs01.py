@@ -71,7 +71,7 @@ class Report_bcs01(tool_excel):
         a('製程,     17, MW002,') 
         a('製程敘述, 15, MF008,') 
         a('單位,      6, MF017, 採購件P:\n第一順位採購單位MB155\n第二順位庫存單位MB004\n加工件MSY:加工單位MF017\n銷售件Q:銷售單位MB156') 
-        a('製程單價, 10, SS001, 自製加工件MSY:產品途程備註MF023\n托外加工件MSY:產品途程加工單價MF018\n採購件P:最新進價(本國幣別NTD)MB050\n泵浦(品號6AA開頭&不展階):售價MB053') 
+        a('製程單價, 10, SS001, 自製加工件MSY:產品途程備註MF023\n托外加工件MSY:產品途程加工單價MF018\n第二順位加工計價資料\n採購件P:最新進價(本國幣別NTD)MB050\n第二順位品號廠商採購單價\n泵浦(品號6AA開頭&不展階):售價MB053') 
         a('單價,      7, SS002, 統一換算為PCS單價') 
         a('工時批量,  10, MF019,') 
         a('固定人時,  10, F_MF009,') 
@@ -282,11 +282,11 @@ class Report_bcs01(tool_excel):
 def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
     # Report_bcs01(fileName, '3AAB1A3205')
-    # Report_bcs01(fileName, '4N0000308')
+    Report_bcs01(fileName, '4N0000308')
     # Report_bcs01(fileName, '4B104018-01')
     # Report_bcs01(fileName, '5A090600003')
     # Report_bcs01(fileName, '6EB0028')
-    Report_bcs01(fileName, '6N0000002', True)
+    # Report_bcs01(fileName, '6N0000002', True)
     
     print('ok')
 
