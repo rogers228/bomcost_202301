@@ -264,20 +264,68 @@ class db_yst(): #讀取excel 單一零件
         df = pd.read_sql(s, self.cn) #轉pd
         return df.iloc[0].to_dict() if len(df.index) > 0 else None
 
+    # def test_df(self):
+    #     s = """
+    #     SELECT
+    #         TA003,TA004,RTRIM(MW002) AS MW002 ,RTRIM(TA006) AS TA006,TA007,TA024,
+    #         SUBSTRING(TA008,1,4) +'/'+ SUBSTRING(TA008,5,2) +'/'+ SUBSTRING(TA008,7,2) AS TA008,
+    #         SUBSTRING(TA009,1,4) +'/'+ SUBSTRING(TA009,5,2) +'/'+ SUBSTRING(TA009,7,2) AS TA009,
+    #         TA010,TA011,TA012,TA034
+    #     FROM SFCTA
+    #         LEFT JOIN CMSMW ON SFCTA.TA004 = CMSMW.MW001
+
+    #     WHERE 
+    #         TA001 = '5101' AND
+    #         TA002 = '20220418001'
+    #     ORDER BY TA003
+    #     """
+    #     s = s.format('4DD0020085')
+    #     df = pd.read_sql(s, self.cn) #轉pd
+    #     return df if len(df.index) > 0 else None
+
+    # def test_df(self):
+    #     s = """
+    #     (SELECT MD001, MD002 FROM CMSMD)
+    #     UNION
+    #     (SELECT MA001, MA002 FROM PURMA)
+    #     """
+    #     df = pd.read_sql(s, self.cn) #轉pd
+    #     return df if len(df.index) > 0 else None        
+
     def test_df(self):
+
+        
         s = """
-        SELECT
-            TA003,TA004,RTRIM(MW002) AS MW002 ,RTRIM(TA006) AS TA006,TA007,TA024,
-            SUBSTRING(TA008,1,4) +'/'+ SUBSTRING(TA008,5,2) +'/'+ SUBSTRING(TA008,7,2) AS TA008,
-            SUBSTRING(TA009,1,4) +'/'+ SUBSTRING(TA009,5,2) +'/'+ SUBSTRING(TA009,7,2) AS TA009,
-            TA010,TA011,TA012,TA034
-        FROM SFCTA
-            LEFT JOIN CMSMW ON SFCTA.TA004 = CMSMW.MW001
+        SELECT 
+            TC001,TC002,TC003,TC047,TC048,TC049,
+            TC023, md1.MD002 AS 移出部門,TC006 AS 移出工序,TC007 AS 移出製程,RTRIM(c1.MW002) AS cw1,
+            TC041, md2.MD002 AS 移入部門,TC008,TC009,RTRIM(c2.MW002) AS cw2,
+            ta.TA024,
+            CASE
+                WHEN TC013 = 1 THEN '1.正常完成'
+                WHEN TC013 = 2 THEN '2.重工完成'
+                WHEN TC013 = 3 THEN '3.退回重工'
+                WHEN TC013 = 4 THEN '4.撥轉'
+                WHEN TC013 = 5 THEN '5.盤盈損'
+                WHEN TC013 = 6 THEN '6.投入'
+                ELSE ''
+            END AS TC013,
+            TC010,TC016,TC036,TC014,TC037
+        FROM SFCTC as tc
+            LEFT JOIN CMSMW as c1 ON tc.TC007 = c1.MW001
+            LEFT JOIN CMSMW as c2 ON tc.TC009 = c2.MW001
+            LEFT JOIN SFCTA as ta ON tc.TC004 = ta.TA001 AND tc.TC005 = ta.TA002 AND tc.TC008=ta.TA003
+            LEFT JOIN (
+            (SELECT MD001, MD002 FROM CMSMD) UNION (SELECT MA001, MA002 FROM PURMA)
+            ) as md1 ON tc.TC023 = md1.MD001
+            LEFT JOIN (
+            (SELECT MD001, MD002 FROM CMSMD) UNION (SELECT MA001, MA002 FROM PURMA)
+            ) as md2 ON tc.TC041 = md2.MD001
 
         WHERE 
-            TA001 = '5101' AND
-            TA002 = '20220418001'
-        ORDER BY TA003
+            TC004 = '5101' AND
+            TC005 = '20220418001'
+        ORDER BY TC006,TC002,TC003
         """
         s = s.format('4DD0020085')
         df = pd.read_sql(s, self.cn) #轉pd
@@ -288,6 +336,8 @@ def test1():
     df = db.test_df()
     # df = db.get_cma_to_dic('4N0000308','S073','1020025','20221010')
     # df = db.get_pmb_to_dic('3AAB1A3205','1030198','20221014')
+    pd.set_option('display.max_rows', df.shape[0]+1) # 顯示最多列
+    pd.set_option('display.max_columns', None) #顯示最多欄位
     print(df)
 
 
