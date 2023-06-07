@@ -292,45 +292,69 @@ class db_yst(): #讀取excel 單一零件
     #     df = pd.read_sql(s, self.cn) #轉pd
     #     return df if len(df.index) > 0 else None        
 
+    # def test_df(self):
+    #     s = """
+    #     SELECT 
+    #         TC001,TC002,TC003,TC047,TC048,TC049,
+    #         TC023, md1.MD002 AS 移出部門,TC006 AS 移出工序,TC007 AS 移出製程,RTRIM(c1.MW002) AS cw1,
+    #         TC041, md2.MD002 AS 移入部門,TC008,TC009,RTRIM(c2.MW002) AS cw2,
+    #         ta.TA024,
+    #         CASE
+    #             WHEN TC013 = 1 THEN '1.正常完成'
+    #             WHEN TC013 = 2 THEN '2.重工完成'
+    #             WHEN TC013 = 3 THEN '3.退回重工'
+    #             WHEN TC013 = 4 THEN '4.撥轉'
+    #             WHEN TC013 = 5 THEN '5.盤盈損'
+    #             WHEN TC013 = 6 THEN '6.投入'
+    #             ELSE ''
+    #         END AS TC013,
+    #         TC010,TC016,TC036,TC014,TC037
+    #     FROM SFCTC as tc
+    #         LEFT JOIN CMSMW as c1 ON tc.TC007 = c1.MW001
+    #         LEFT JOIN CMSMW as c2 ON tc.TC009 = c2.MW001
+    #         LEFT JOIN SFCTA as ta ON tc.TC004 = ta.TA001 AND tc.TC005 = ta.TA002 AND tc.TC008=ta.TA003
+    #         LEFT JOIN (
+    #         (SELECT MD001, MD002 FROM CMSMD) UNION (SELECT MA001, MA002 FROM PURMA)
+    #         ) as md1 ON tc.TC023 = md1.MD001
+    #         LEFT JOIN (
+    #         (SELECT MD001, MD002 FROM CMSMD) UNION (SELECT MA001, MA002 FROM PURMA)
+    #         ) as md2 ON tc.TC041 = md2.MD001
+
+    #     WHERE 
+    #         TC004 = '5101' AND
+    #         TC005 = '20220418001'
+    #     ORDER BY TC006,TC002,TC003
+    #     """
+    #     s = s.format('4DD0020085')
+    #     df = pd.read_sql(s, self.cn) #轉pd
+    #     return df if len(df.index) > 0 else None
+
     def test_df(self):
-
-        
         s = """
-        SELECT 
-            TC001,TC002,TC003,TC047,TC048,TC049,
-            TC023, md1.MD002 AS 移出部門,TC006 AS 移出工序,TC007 AS 移出製程,RTRIM(c1.MW002) AS cw1,
-            TC041, md2.MD002 AS 移入部門,TC008,TC009,RTRIM(c2.MW002) AS cw2,
-            ta.TA024,
-            CASE
-                WHEN TC013 = 1 THEN '1.正常完成'
-                WHEN TC013 = 2 THEN '2.重工完成'
-                WHEN TC013 = 3 THEN '3.退回重工'
-                WHEN TC013 = 4 THEN '4.撥轉'
-                WHEN TC013 = 5 THEN '5.盤盈損'
-                WHEN TC013 = 6 THEN '6.投入'
-                ELSE ''
-            END AS TC013,
-            TC010,TC016,TC036,TC014,TC037
-        FROM SFCTC as tc
-            LEFT JOIN CMSMW as c1 ON tc.TC007 = c1.MW001
-            LEFT JOIN CMSMW as c2 ON tc.TC009 = c2.MW001
-            LEFT JOIN SFCTA as ta ON tc.TC004 = ta.TA001 AND tc.TC005 = ta.TA002 AND tc.TC008=ta.TA003
-            LEFT JOIN (
-            (SELECT MD001, MD002 FROM CMSMD) UNION (SELECT MA001, MA002 FROM PURMA)
-            ) as md1 ON tc.TC023 = md1.MD001
-            LEFT JOIN (
-            (SELECT MD001, MD002 FROM CMSMD) UNION (SELECT MA001, MA002 FROM PURMA)
-            ) as md2 ON tc.TC041 = md2.MD001
-
-        WHERE 
-            TC004 = '5101' AND
-            TC005 = '20220418001'
-        ORDER BY TC006,TC002,TC003
+            SELECT TOP 100
+                TA001 AS 製令單別,
+                TA002 AS 製令單號,
+                TA003 AS 開單日期,
+                RTRIM(TA006) AS 品號,
+                TA034 AS 品名,
+                TA013 AS 確認碼,
+                CASE WHEN TA011 = '1' THEN '1.未生產' WHEN TA011 = '2' THEN '2.已發料' WHEN TA011 = '3' THEN '3.生產中' WHEN TA011 LIKE 'Y' THEN 'Y.已完工' WHEN TA011 LIKE 'y' THEN 'y.指定完工' ELSE '' END AS 狀態碼
+            FROM MOCTA
+            WHERE
+                -- TA001 LIKE '5101' AND
+                -- TA002 LIKE '20230303001'
+                RTRIM(TA006) LIKE '4A401009' AND
+                TA013 LIKE 'Y'
+            ORDER BY TA003 DESC
         """
-        s = s.format('4DD0020085')
         df = pd.read_sql(s, self.cn) #轉pd
+        print(df.iloc[0]['品號'])
+        print(len(df.iloc[0]['品號']))
         return df if len(df.index) > 0 else None
-
+                # TA001 LIKE '5101' AND
+                # TA002 LIKE '20230303001'
+                # TA006 LIKE '4A401009' AND
+                # TA013 LIKE 'Y'
 def test1():
     db = db_yst()
     df = db.test_df()
