@@ -674,8 +674,8 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         # 最後N筆交易紀錄 是否已改變供應商
         islast = self.is_pui_last_change
         df_w = df.loc[df['pd_type'] == 'P']
+        ed8={} # error dictionary
         if len(df_w.index)>0:
-            ed8={} # error dictionary
             for pdno, supply in zip(df_w['pdno'].tolist(), df_w['supply'].tolist()):
                 em8={} # error message
                 result, message = islast(pdno, supply)
@@ -706,12 +706,14 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         self.df_pkg = df1
 
 def test1():
-    bom = COST('3AAB1A3205')
+    # bom = COST('3AAB1A3205')
+
     # bom = COST('4N0000308')
+    # print(bom)
     # bom = COST('5A160600033')
     # bom = COST('6AA0602800700001', pump_lock = True)
     # bom = COST('8AC002', pump_lock = True)
-    # bom = COST('8FC026', pump_lock = True)
+    bom = COST('8CC006', pump_lock = True)
     dic_err=bom.error_dic()
     print(dic_err)
 

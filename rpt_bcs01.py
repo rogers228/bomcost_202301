@@ -92,6 +92,7 @@ class Report_bcs01(tool_excel):
         self.xls_width =dict(zip(lis_e1, lis_e2))
         self.xls_sqlcn =dict(zip(lis_e1, lis_e3))
         self.xls_memo =dict(zip(lis_e1, lis_e4))
+
     def output(self):
         caption = 'BOM製程成本表' # 標題
         if True: # style, func
@@ -282,12 +283,13 @@ class Report_bcs01(tool_excel):
 def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
     # Report_bcs01(fileName, '3AAB1A3205')
-    Report_bcs01(fileName, '4N0000308')
+    # Report_bcs01(fileName, '4N0000308')
     # Report_bcs01(fileName, '4B104018-01')
     # Report_bcs01(fileName, '5A090600003')
     # Report_bcs01(fileName, '6EB0028')
     # Report_bcs01(fileName, '6N0000002', True)
-    # Report_bcs01(fileName, 8CC006, True)
+    Report_bcs01(fileName, '8CC006', True)
+    # 8DC005 ,8CC006
     
     print('ok')
 
