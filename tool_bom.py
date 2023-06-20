@@ -174,6 +174,23 @@ class BOM(): # 產生bom to_df() 方法
 
         # pid
         df = self.df_bom.copy()
+
+        # 20230620 鼎新品號資料會有尾部空白的問題
+        df['pdno'] = df['pdno'].str.strip() 
+        df['parent_pdno'] = df['parent_pdno'].str.strip()
+
+        ''' debug
+        print(df.columns.tolist())
+        df1 = df[['gid', 'pdno', 'parent_pdno']]
+        pd.set_option('display.max_rows', df1.shape[0]+1) # 顯示最多列
+        pd.set_option('display.max_columns', None) #顯示最多欄位
+        print(df1)
+        print('-------')
+        for i, r in df.iterrows():
+            if r['pdno'] != '' and r['pdno'][-1:] == ' ':
+                print(r['pdno'])
+        '''
+
         for i, r in df.iterrows():
             if r['bom_level'] > 0: # 非0階
                 ri = i           # 當前行數
@@ -185,6 +202,9 @@ class BOM(): # 產生bom to_df() 方法
 
         # child_quantity 子件數量(筆數)
         df = self.df_bom.copy()
+        # print('-----')
+        # print(df)
+
         for i, r in df.iterrows():
             df_w = df.loc[df['pid'] == r['gid']] # 篩選
             self.df_bom.at[i,'child_quantity'] = 0 if df_w is None else len(df_w.index)
@@ -250,9 +270,10 @@ class BOM(): # 產生bom to_df() 方法
                     # arr_bottom.append(r['gid']) # 本階層 大於等於 下一筆的階層 必為最下階
 
 def test1():
-    bom = BOM('4B101050')
+    # bom = BOM('4B101050')
     # bom = BOM('5A010100005')
     # bom = BOM('6AA03FA001EL1A01')
+    bom = BOM('6AA09N180100004', pump_lock = True)
     # bom = BOM('7AA01001A01', pump_lock = True)
     # bom = BOM('8AC024', pump_lock = True)
     df = bom.to_df()

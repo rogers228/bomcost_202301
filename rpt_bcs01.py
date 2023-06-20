@@ -287,8 +287,8 @@ def test1():
     # Report_bcs01(fileName, '4B104018-01')
     # Report_bcs01(fileName, '5A090600003')
     # Report_bcs01(fileName, '6EB0028')
-    # Report_bcs01(fileName, '6N0000002', True)
-    Report_bcs01(fileName, '8CC006', True)
+    Report_bcs01(fileName, '6AA09N180100004', True)
+    # Report_bcs01(fileName, '8CC006', True)
     # 8DC005 ,8CC006
     
     print('ok')

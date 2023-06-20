@@ -711,9 +711,9 @@ def test1():
     # bom = COST('4N0000308')
     # print(bom)
     # bom = COST('5A160600033')
-    # bom = COST('6AA0602800700001', pump_lock = True)
+    bom = COST('6AA09N180100004', pump_lock = True)
     # bom = COST('8AC002', pump_lock = True)
-    bom = COST('8CC006', pump_lock = True)
+    # bom = COST('8CC006', pump_lock = True)
     dic_err=bom.error_dic()
     print(dic_err)
 
