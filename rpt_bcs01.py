@@ -35,7 +35,7 @@ class Report_bcs01(tool_excel):
         self.report_path = os.path.join(os.path.expanduser(r'~\Documents'), self.report_dir) #資料夾路徑
 
         self.file_tool = tool_file.File_tool() # 檔案工具並初始化資料夾
-        
+
         if self.report_path is None:
             print('找不到路徑')
             sys.exit() #正式結束程式
@@ -48,7 +48,7 @@ class Report_bcs01(tool_excel):
         self.save_xls()
         self.open_xls() # 開啟
         sys.exit()
-        
+
     def create_excel(self):
         wb = openpyxl.Workbook()
         sh = wb.active
@@ -62,24 +62,24 @@ class Report_bcs01(tool_excel):
         # 基礎設定
         # name, width, sql_column_name
         lis_base = []; a = lis_base.append
-        a('序號,     15,  none,') 
+        a('序號,     15,  none,')
         a('品號,     15,  none,')
-        a('品名規格, 38,  none,') 
-        a('廠商,      8, MF006,') 
+        a('品名規格, 38,  none,')
+        a('廠商,      8, MF006,')
         a('簡稱,     12, MF007,')
         a('製號,      6, MF004,')
-        a('製程,     17, MW002,') 
-        a('製程敘述, 15, MF008,') 
-        a('單位,      6, MF017, 採購件P:\n第一順位採購單位MB155\n第二順位庫存單位MB004\n加工件MSY:加工單位MF017\n銷售件Q:銷售單位MB156') 
-        a('製程單價, 10, SS001, 自製加工件MSY:產品途程備註MF023\n托外加工件MSY:產品途程加工單價MF018\n第二順位加工計價資料\n採購件P:最新進價(本國幣別NTD)MB050\n第二順位品號廠商採購單價\n泵浦(品號6AA開頭&不展階):售價MB053') 
-        a('單價,      7, SS002, 統一換算為PCS單價') 
-        a('工時批量,  10, MF019,') 
-        a('固定人時,  10, F_MF009,') 
-        a('固定機時,  10, F_MF024,') 
-        a('總用量,     9,  none,') 
-        a('總單價,     9,  none,') 
-        a('金額,       9,  none,') 
-        a('試算,      14,  none,') 
+        a('製程,     17, MW002,')
+        a('製程敘述, 15, MF008,')
+        a('單位,      6, MF017, 採購件P:\n第一順位採購單位MB155\n第二順位庫存單位MB004\n加工件MSY:加工單位MF017\n銷售件Q:銷售單位MB156')
+        a('製程單價, 10, SS001, 自製加工件MSY:產品途程備註MF023\n托外加工件MSY:產品途程加工單價MF018\n第二順位加工計價資料\n採購件P:最新進價(本國幣別NTD)MB050\n第二順位品號廠商採購單價\n泵浦(品號6AA開頭&不展階):售價MB053')
+        a('單價,      7, SS002, 統一換算為PCS單價')
+        a('工時批量,  10, MF019,')
+        a('固定人時,  10, F_MF009,')
+        a('固定機時,  10, F_MF024,')
+        a('總用量,     9,  none,')
+        a('總單價,     9,  none,')
+        a('金額,       9,  none,')
+        a('試算,      14,  none,')
 
         lis_e1, lis_e2, lis_e3, lis_e4 = [],[],[],[]
         for e in lis_base:
@@ -113,7 +113,7 @@ class Report_bcs01(tool_excel):
         x_i = self.xls_index
         x_width = self.xls_width
         x_sqlcn = self.xls_sqlcn
-        x_memo = self.xls_memo 
+        x_memo = self.xls_memo
         cr=1; column_w(list(x_width.values())) # 設定欄寬
         for name, index in x_i.items():
             write(cr, index, name, f11, alignment=ah_wr, border=bt_border, fillcolor=cf_gray) # 欄位名稱
@@ -129,7 +129,7 @@ class Report_bcs01(tool_excel):
             cr-=1
             for pdno_idx, gid in enumerate(lis_gid):
                 pdno = bmr(gid,'pdno')
-                cr+=1; write(cr, x_i['品號'], pdno, f10, alignment=ah_wr) # 品號 
+                cr+=1; write(cr, x_i['品號'], pdno, f10, alignment=ah_wr) # 品號
                 crm = cr  # 紀錄位置 crm
                 # 自身總用量 self_quantity
                 if pdno_idx == 0:
@@ -253,10 +253,10 @@ class Report_bcs01(tool_excel):
 
             money=price*quantity
             nf = '0.##' if is_dec(price) else 'General'
-            sn='金額'; write(cr_pd, x_i[sn], money, f11, alignment=ahr, number_format=nf) 
+            sn='金額'; write(cr_pd, x_i[sn], money, f11, alignment=ahr, number_format=nf)
 
             total+=money
-            sn='試算'; write(cr_pd, x_i[sn], total, f11gr, alignment=ahr, number_format=nf_total) 
+            sn='試算'; write(cr_pd, x_i[sn], total, f11gr, alignment=ahr, number_format=nf_total)
 
         cr+=1; write(cr, 1, '-結束- 以下空白', alignment=ah_center_top); self.c_merge(cr,1,cr,len(x_i.keys()))
 
@@ -286,11 +286,12 @@ def test1():
     # Report_bcs01(fileName, '4N0000308')
     # Report_bcs01(fileName, '4B104018-01')
     # Report_bcs01(fileName, '5A090600003')
+    Report_bcs01(fileName, '6AE0300002')
     # Report_bcs01(fileName, '6EB0028')
-    Report_bcs01(fileName, '6AA09N180100004', True)
+    # Report_bcs01(fileName, '6AA09N180100004', True)
     # Report_bcs01(fileName, '8CC006', True)
     # 8DC005 ,8CC006
-    
+
     print('ok')
 
 if __name__ == '__main__':

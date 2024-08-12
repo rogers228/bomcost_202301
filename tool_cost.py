@@ -57,70 +57,70 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                 'pdno':{
                     'mk_i':
                     'message'
-                } 
+                }
             }
             'err5':  該製程 已有最新托外進貨  未更新
             {
                 'pdno':{
                     'mk_i':
                     'message'
-                } 
-            } 
+                }
+            }
             'err6': 該製程  不符合 標準廠商加工單價
             {
                 'pdno':{
                     'mk_i':
                     'message'
-                } 
+                }
             }
             'err7': 該製程  不符合 標準加工單位
             {
                 'pdno':{
                     'mk_i':
                     'message'
-                } 
+                }
             }
             'err8': 該製程(採購)  最後N筆已更改供應商
             {
                 'pdno':{
                     'mk_i':
                     'message'
-                } 
+                }
             }
             'err9': 該製程(採購)  加工單位 不符合 第一順位標準廠商採購加工單未  第二順位最後進貨計價單價
             {
                 'pdno':{
                     'mk_i':
                     'message'
-                } 
+                }
             }
             'err10': 該製程(採購)  不符合 最新單位進價
             {
                 'pdno':{
                     'mk_i':
                     'message'
-                } 
+                }
             }
             'err11': 該製程(採購)  未維護PCS以外的單位換算
             {
                 'pdno':{
                     'mk_i':
                     'message'
-                } 
+                }
             }
             'err12': 該製程(採購)  單位換算不符合最新進貨
             {
                 'pdno':{
                     'mk_i':
                     'message'
-                } 
+                }
             },
             'err13': 該製程(採購)  採購件P採購單位與最新計價單位皆為PCS，卻有設定換算單位
             {
                 'pdno':{
                     'mk_i':
                     'message'
-                } 
+                }
             },
         }
         '''
@@ -128,8 +128,8 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
     def group_to_list(self):
         return self.cost_group_list
 
-    def dlookup_bmk_pdno(self, pdno): # 產品製程 
-        return self.dic_bmk[pdno] # dict key: pdno,   value: ddaaframe 
+    def dlookup_bmk_pdno(self, pdno): # 產品製程
+        return self.dic_bmk[pdno] # dict key: pdno,   value: ddaaframe
 
     def dlookup_pdmd(self, pdno, column):
         # 從 pdno 找對應的 column欄位名稱的值value (首筆)
@@ -139,7 +139,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         df = self.df_md
         if df is None:
             return result
-        
+
         df_w = df.loc[df['MD001']==pdno]
         if len(df_w.index)>0:
             result = df_w.iloc[0][column]
@@ -279,7 +279,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             return ''
         mRegex = re.compile(r'\d+\.?\d*')
         match = mRegex.search(findStr)
-        return match.group() if match else '' 
+        return match.group() if match else ''
 
     def is_pui_last_change(self, pdno, mf006):
         # 最後N筆交易紀錄 是否已改變供應商 (用來檢查是否修改主供應商)
@@ -303,8 +303,8 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             一個成本群組有可能是2個或以上 品號所組成，視為同一個零件成本 才符合成本計算
             例如:軸心與其材料件ㄤ; 零件成品與其子件(代料加工件)  實務直觀上為同一零件
             '''
-        gid = self.dlookup_gid # dlookup for gid 
-        pid = self.dlookup_pid # dlookup for gid 
+        gid = self.dlookup_gid # dlookup for gid
+        pid = self.dlookup_pid # dlookup for gid
 
         # step 1 找子件 bom_type 為 2 判定為材料(接近材料屬性 非純粹的材料)
         arr_c = array.array('i') # child 材料子件的gid
@@ -321,15 +321,15 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                     continue
         # print('step 1 arr_c:', arr_c.tolist())
 
-        # step 2 由材料找 
+        # step 2 由材料找
         df = self.df_bom
         df_w = df[df['pdno'].str.contains(r'^2.*')] # 材料件 品號2開頭
         for i, r in df_w.iterrows():
             if not (r['gid'] in arr_c):
                 arr_c.append(r['gid'])
-        
+
         lis_c = arr_c.tolist(); lis_c.sort() # 排序
-        arr_c = array.array('i', lis_c) 
+        arr_c = array.array('i', lis_c)
         # print('step 2 arr_c:', arr_c.tolist())
 
         # step 3 產生 group list
@@ -338,7 +338,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         arr_gid = array.array('i', self.df_bom['gid'].tolist()) # all gid
 
         arr_gid.reverse() # 反序遍歷
-        # print('step 3 arr_gid:', arr_gid.tolist()) 
+        # print('step 3 arr_gid:', arr_gid.tolist())
         while len(arr_gid)>0:
             lis_t = [] # 暫存
             curr_id = arr_gid[0]
@@ -421,7 +421,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             'MF005': '自製外包性質',
             'MF006': '供應商代號',
             'MF007': '供應商簡稱',
-            'MF008': '製程敘述', 
+            'MF008': '製程敘述',
             'MF022': '檢驗方式代號',
             'MF019': '工時批量',
             'MF009': '固定人時(秒)',
@@ -434,7 +434,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             'MW002': '製程',
             'SS001': '製程單價',  # 該製程加工單位的單價  例如1KG多少錢 (非鼎新資料)
             'SS002': '單價',      # 該製程換算為PCS的單價 (非鼎新資料)
-            'SS031': '最新進價',  # 
+            'SS031': '最新進價',  #
             }
         lis_columns = list(dic_columns.keys())
         for i, r in df.iterrows():
@@ -442,7 +442,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             # 宏觀的產品製程( 包含產品製程資料 及 採購資料)  to_df() 方法
             df_m = pd.DataFrame(None, columns = list(dic_columns.keys())) # None dataframe
             if r['pd_type']=='P': # 品號屬性 P.採購件
-                
+
                 p_unit = r['pur_unit'] # 採購加工單位第一順位 為採購單位
                 # p_unit = pmd(r['pdno'], 'MD002') # 採購加工單位第一順位 為單位換算
                 if p_unit == '':
@@ -570,7 +570,9 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                             em7['mk_i']=i; em7['mssage']=f'不符合標準途程加工單位:{st_mf017}'
 
                     if r['MF005'] == '1':
-                        f_ss001 = re_f(r['MF023']) # 1自製抓 MF023 備註
+                        if re_f(r['MF023']).strip() != '':
+                            f_ss001 = re_f(r['MF023']) # 1自製抓 MF023 備註
+
                     elif r['MF005'] == '2':
                         # 加工單價(第一順位)
                         f_ss001 = r['MF018']       # 2托外抓 MF018
@@ -623,7 +625,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             # print(df_new.dtypes)
             dic_all_new[pdno] = df_new
 
-            # error 
+            # error
             if len(em4)>0: ed4[pdno] = em4    # 禁止交易供應商 未更新
             if len(em5)>0: ed5[pdno] = em5    # 托外最新加工單價 未維護
             if len(em6)>0: ed6[pdno] = em6    # 不吻合 標準廠商加工單價
@@ -655,15 +657,15 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
     def comp_3(self): # 檢查資料異常
         info = self.error_information # 異常信息
         df = self.df_bom
-        
+
         #檢查 1 最下階應為P, Q件，或應再建立P件為子件
         lis_err1 = []
-        df_w = df.loc[(df['bom_level_lowest'] == True) & 
+        df_w = df.loc[(df['bom_level_lowest'] == True) &
             (df['pd_type'] != 'P') & (df['pd_type'] != 'Q')] # P件 且 子件數量大於0
         if len(df_w.index) > 0:
             lis_err1 = df_w['gid'].tolist()
         info['err1'] = lis_err1
-        
+
         #檢查 2 P件不應該有BOM架構，或有BOM應為S件or M件
         lis_err2 = []
         df_w = df.loc[(df['pd_type'] == 'P') & (df['child_quantity']>0)] # P件 且 子件數量大於0
@@ -696,7 +698,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
         df_w = df.loc[(df['pd_type'] == 'P') &
                       (df['pdno'].str.contains(r'^2.*')) & # 2開頭
                       (df['pd_spec'].str.contains(r'@\s*.*\s*KG'))] # 有@ KG者
-        
+
         df1 = df_w[['gid','pdno','pd_spec']].copy()
         df1.reset_index(inplace=True) #重置索引
         lis = []
@@ -711,7 +713,8 @@ def test1():
     # bom = COST('4N0000308')
     # print(bom)
     # bom = COST('5A160600033')
-    bom = COST('6AA09N180100004', pump_lock = True)
+    # bom = COST('6AA09N180100004', pump_lock = True)
+    bom = COST('6AE0300002', pump_lock = True)
     # bom = COST('8AC002', pump_lock = True)
     # bom = COST('8CC006', pump_lock = True)
     dic_err=bom.error_dic()
