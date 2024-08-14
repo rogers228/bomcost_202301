@@ -206,19 +206,30 @@ class db_yst(): #讀取excel 單一零件
             return None
         pdno_arr = str(pdno_arr).replace(' ','') # 去除空格
         pdno_inSTR = "('" + "','".join(pdno_arr.split(',')) + "')"
+        # s = """
+        #     SELECT TH004,TG005,TG007,TG008,TH018,TH019,TH016,TH056,TH007,TH008,TH001,TH002
+        #     FROM PURTH
+        #         LEFT JOIN PURTG ON TH001=TG001 AND TH002=TG002
+        #     WHERE
+        #         (TH002+'-'+TH001) IN (
+        #             SELECT MAX(TH002+'-'+TH001)
+        #             FROM PURTH LEFT JOIN PURTG ON TH001=TG001 AND TH002=TG002
+        #             WHERE TH004 IN {0}
+        #             GROUP BY TH004,TG005
+        #             )
+        #     """
+
+        # TH030 = 'Y' 為進貨單已確認  因為鼎新會預先產生進貨單為未確認
         s = """
-            SELECT TH004,TG005,TG007,TG008,TH018,TH019,TH016,TH056,TH007,TH008,TH001,TH002
+            SELECT TH004,TG005,TG007,TG008,TH018,TH019,TH016,TH056,TH007,TH008,TH001,TH002,TH030
             FROM PURTH
                 LEFT JOIN PURTG ON TH001=TG001 AND TH002=TG002
             WHERE
-                (TH002+'-'+TH001) IN (
-                    SELECT MAX(TH002+'-'+TH001)
-                    FROM PURTH LEFT JOIN PURTG ON TH001=TG001 AND TH002=TG002
-                    WHERE TH004 IN {0}
-                    GROUP BY TH004,TG005
-                    )
+                TH004 IN {0} AND
+                TH030 = 'Y'
             """
         s = s.format(pdno_inSTR)
+        # print(s)
         df = pd.read_sql(s, self.cn)
         return df if len(df.index) > 0 else None
 
@@ -385,12 +396,19 @@ def test1():
 
 def test2():
     db = db_yst()
-    pdno = '3B01BLA05001'
-    rdpu, unit, rd_mf006, rd_mf007 = db.get_rdpu(pdno)
-    print(type(rdpu))
-    print(type(unit))
-    print(type(rd_mf006))
-    print(type(rd_mf007))
-    print(f'{pdno} 研發採購單價:{rdpu} 採購單位:{unit} 供應商代號:{rd_mf006} 簡稱:{rd_mf007}')
+    # pdno = '3B01BLA05001'
+    pdno = '3B01ABA05150'
+    # rdpu, unit, rd_mf006, rd_mf007 = db.get_rdpu(pdno)
+    # print(type(rdpu))
+    # print(type(unit))
+    # print(type(rd_mf006))
+    # print(type(rd_mf007))
+    # print(f'{pdno} 研發採購單價:{rdpu} 採購單位:{unit} 供應商代號:{rd_mf006} 簡稱:{rd_mf007}')
+
+    df = db.wget_pui(pdno)
+    pd.set_option('display.max_rows', df.shape[0]+1) # 顯示最多列
+    pd.set_option('display.max_columns', None) #顯示最多欄位
+    print(df)
+
 if __name__ == '__main__':
     test2()

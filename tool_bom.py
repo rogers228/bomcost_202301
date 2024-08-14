@@ -176,7 +176,7 @@ class BOM(): # 產生bom to_df() 方法
         df = self.df_bom.copy()
 
         # 20230620 鼎新品號資料會有尾部空白的問題
-        df['pdno'] = df['pdno'].str.strip() 
+        df['pdno'] = df['pdno'].str.strip()
         df['parent_pdno'] = df['parent_pdno'].str.strip()
 
         ''' debug
@@ -213,7 +213,7 @@ class BOM(): # 產生bom to_df() 方法
         df = self.df_bom.copy()
         for i, r in df.iterrows():
             total = r['bom_mol'] / r['bom_den']
-            upper_id = r['pid'] # 上階的gid 
+            upper_id = r['pid'] # 上階的gid
             while True:
                 if upper_id == 0: # 無上階
                     break
@@ -270,18 +270,20 @@ class BOM(): # 產生bom to_df() 方法
                     # arr_bottom.append(r['gid']) # 本階層 大於等於 下一筆的階層 必為最下階
 
 def test1():
+    bom = BOM('3B01ABA05150', pump_lock = True)
     # bom = BOM('4B101050')
     # bom = BOM('5A010100005')
     # bom = BOM('6AA03FA001EL1A01')
-    bom = BOM('6AA09N180100004', pump_lock = True)
+    # bom = BOM('6AA09N180100004', pump_lock = True)
     # bom = BOM('7AA01001A01', pump_lock = True)
     # bom = BOM('8AC024', pump_lock = True)
     df = bom.to_df()
     pd.set_option('display.max_rows', df.shape[0]+1) # 顯示最多列
     pd.set_option('display.max_columns', None) #顯示最多欄位
+    print(df)
     # df1 = df[['gid','pdno', 'pid','pd_name','bom_extend','pd_type','pd_unit']]
-    df1 = df[['gid','pdno','pd_name','pd_type','pd_unit','pur_unit','sales_unit']]
-    print(df1)
+    # df1 = df[['gid','pdno','pd_name','pd_type','pd_unit','pur_unit','sales_unit']]
+    # print(df1)
 
 if __name__ == '__main__':
-    test1()        
+    test1()

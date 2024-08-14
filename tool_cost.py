@@ -27,7 +27,7 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
 
         self.df_pu = self.yst.wget_pui(pdno_arr_str) #所有品號 採購最新進貨
         if self.df_pu is not None:
-            self.df_pu = self.df_pu.sort_values(by='TH002', ascending=False) # 排序最新
+            self.df_pu = self.df_pu.sort_values(by='TH002', ascending=False) # 以單號排序最新
 
         # print(self.df_ct)
         # 標準廠商途程單價
@@ -196,20 +196,20 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             result = df_w.iloc[0][column]
         return result
 
-    def dlookup_pdpu(self, pdno, column):
-        # 最新採購進貨
-        # 從1個條件: 品號pdno  (不分供應商)
-        # 找到第一筆(最新)對應的 column欄位名稱的值value
-        # 品號  廠商代號 幣別  原幣單位進價(單價) 計價數量 計價單位 進貨數量 單位  進貨單別 單號
-        # TH004,TG005,  TG007,TH018,           TH016,  TH056,   TH007,  TH008,TH001,  TH002
-        result = ''
-        df = self.df_pu
-        if df is None:
-            return result
-        df_w = df.loc[df['TH004']==pdno]
-        if len(df_w.index)>0:
-            result = df_w.iloc[0][column]
-        return result
+    # def dlookup_pdpu(self, pdno, column):
+    #     # 最新採購進貨
+    #     # 從1個條件: 品號pdno  (不分供應商)
+    #     # 找到第一筆(最新)對應的 column欄位名稱的值value
+    #     # 品號  廠商代號 幣別  原幣單位進價(單價) 計價數量 計價單位 進貨數量 單位  進貨單別 單號
+    #     # TH004,TG005,  TG007,TH018,           TH016,  TH056,   TH007,  TH008,TH001,  TH002
+    #     result = ''
+    #     df = self.df_pu
+    #     if df is None:
+    #         return result
+    #     df_w = df.loc[df['TH004']==pdno]
+    #     if len(df_w.index)>0:
+    #         result = df_w.iloc[0][column]
+    #     return result
 
     def dlookdic_pdpu(self, pdno):
         # 最新採購進貨
@@ -737,16 +737,20 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
 
 def test1():
     # bom = COST('3AAB1A3205')
-
-    bom = COST('4N0000308')
+    # bom = COST('3B01ABA05150')
+    bom = COST('4A602060')
     # print(bom)
     # bom = COST('5A160600033')
     # bom = COST('6AA09N180100004', pump_lock = True)
     # bom = COST('6AE0300002', pump_lock = True)
     # bom = COST('8AC002', pump_lock = True)
     # bom = COST('8CC006', pump_lock = True)
-    # dic_err=bom.error_dic()
-    # print(dic_err)
+
+    # dic = bom.dlookdic_pdpu('3B01ABA05150') # 找採購最新進貨
+    # print(dic)
+
+    dic_err=bom.error_dic()
+    print(dic_err)
 
     # for pdno, e in dic_err['err13'].items():
     #     print(pdno)
