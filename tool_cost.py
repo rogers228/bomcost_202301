@@ -389,10 +389,13 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
 
         self.cost_group_list = lis_g
 
-    def comp_2(self): # 計算宏觀產品製程成本
+    def comp_2(self): # 計算宏觀產品製程成本 (包含 製程 與 採購)
         today = time.strftime("%Y%m%d", time.localtime()) # 今日日期8碼文字
         info = self.error_information # 異常信息
         df = self.df_bom
+        # pd.set_option('display.max_rows', df.shape[0]+1) # 顯示最多列
+        # pd.set_option('display.max_columns', None) #顯示最多欄位
+        # print(df)
         re_f = self.isRegMath_float # re 文字找數字
         pmd = self.dlookup_pdmd     # 找換算單位
         pmd_tolist = self.dlookup_pdmd_tolist # 從 pdno 找所有換算單位
@@ -442,19 +445,44 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
             # 宏觀的產品製程( 包含產品製程資料 及 採購資料)  to_df() 方法
             df_m = pd.DataFrame(None, columns = list(dic_columns.keys())) # None dataframe
             if r['pd_type']=='P': # 品號屬性 P.採購件
-
-                p_unit = r['pur_unit'] # 採購加工單位第一順位 為採購單位
-                # p_unit = pmd(r['pdno'], 'MD002') # 採購加工單位第一順位 為單位換算
-                if p_unit == '':
-                    p_unit = r['pd_unit'] # 加工單位第二順位 為庫存單位
-                dic_p = {
+                # print(r['pdno'])
+                dic_p = { # 預設值
                 'MW002': '採購', # 製程
-                'MF006': r['supply'], # 供應商代號
-                'MF007': self.yst.get_pur_ma002(r['supply']), # 供應商簡稱'
-                'MF017': p_unit, # 加工單位 第一順位採購單位 第二順位庫存單位
-                'MF018': r['last_price'] # 最新進價(本國幣別NTD)
+                'MF006': '', # 供應商代號
+                'MF007': '', # 供應商簡稱'
+                'MF017': '', # 加工單位 第 1 順位 為 研發採購單位unit 第2順位採購單位 第3順位庫存單位
+                'MF018': '', # 採購單價 第1順位 研發採購單價  第2順位 最新進價(本國幣別NTD)
                 }
+                rd_price, rd_unit, rd_mf006, rd_mf007 = self.yst.get_rdpu(r['pdno']) # 研發採購單價, 研發採購單位, 供應商代號, 供應商簡稱
+                # print(rd_price, rd_unit, rd_mf006, rd_mf007)
+                if rd_price != 0:
+                    # 有設定研發採購單價
+                    dic_p['MF006'] = rd_mf006 # 研發採購單價的  供應商代號,
+                    dic_p['MF007'] = rd_mf007 # 研發採購單價的  供應商簡稱,
+                    dic_p['MF017'] = rd_unit  # 採購加工單位第 1 順位 為 研發採購單位unit
+                    dic_p['MF018'] = rd_price # 採購單價 第 1 順位 為研發採購單價
+                else:
+                    dic_p['MF006'] = r['supply'] # 供應商代號
+                    dic_p['MF007'] = self.yst.get_pur_ma002(r['supply']) # 供應商簡稱'
+                    dic_p['MF017'] = r['pd_unit'] if r['pur_unit'] == '' else r['pur_unit'] # 採購加工單位第 2 順位 為採購單位 第 3 順位 為庫存單位
+                    dic_p['MF018'] = r['last_price'] # 採購單價 第 2 順位 最新進價(本國幣別NTD)
+
+                # p_unit = r['pur_unit'] # 採購加工單位第 2 順位 為採購單位
+                # # p_unit = pmd(r['pdno'], 'MD002') # 採購加工單位第一順位 為單位換算
+                # if p_unit == '':
+                #     p_unit = r['pd_unit'] # 加工單位第 3 順位 為庫存單位
+                # dic_p = {
+                # 'MW002': '採購', # 製程
+                # 'MF006': r['supply'], # 供應商代號
+                # 'MF007': self.yst.get_pur_ma002(r['supply']), # 供應商簡稱'
+                # 'MF017': p_unit, # 加工單位 第一順位採購單位 第二順位庫存單位
+                # 'MF018': r['last_price'] # 最新進價(本國幣別NTD)
+                # }
+
                 df_m = df_m.append(dic_p, ignore_index=True) # 20220915
+                # pd.set_option('display.max_rows', df.shape[0]+1) # 顯示最多列
+                # pd.set_option('display.max_columns', None) #顯示最多欄位
+                # print(df_m)
 
             elif r['pd_type'] in 'MSY': # 品號屬性 M.自製件,S.託外加工件,Y.虛設品號
                 df_make = dic_msy[r['pdno']] # 該品號的製程
@@ -710,15 +738,15 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
 def test1():
     # bom = COST('3AAB1A3205')
 
-    # bom = COST('4N0000308')
+    bom = COST('4N0000308')
     # print(bom)
     # bom = COST('5A160600033')
     # bom = COST('6AA09N180100004', pump_lock = True)
-    bom = COST('6AE0300002', pump_lock = True)
+    # bom = COST('6AE0300002', pump_lock = True)
     # bom = COST('8AC002', pump_lock = True)
     # bom = COST('8CC006', pump_lock = True)
-    dic_err=bom.error_dic()
-    print(dic_err)
+    # dic_err=bom.error_dic()
+    # print(dic_err)
 
     # for pdno, e in dic_err['err13'].items():
     #     print(pdno)

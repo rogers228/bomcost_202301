@@ -14,7 +14,7 @@ class db_yst(): #讀取excel 單一零件
     def __init__(self):
         # self.cn = pyodbc.connect(config_conn_YST) # connect str 連接字串\
         self.cn = create_engine(URL.create('mssql+pyodbc', query={'odbc_connect': config_conn_YST})).connect()
-    
+
     def get_pd_test(self, pdno):
         s = "SELECT MB001,MB002,MB003 FROM INVMB WHERE MB001 = '{0}'"
         s = s.format(pdno)
@@ -93,6 +93,24 @@ class db_yst(): #讀取excel 單一零件
         s = s.format(mf001, mf002)
         df = pd.read_sql(s, self.cn)
         return df if len(df.index) > 0 else None
+
+    def get_rdpu(self, pdno):
+        # 取得研發採購單價 及 採購單位 為tuple
+        # (a採購單價, b採購單位,c,d)
+        s = """
+            SELECT TOP 1 RTRIM(MF006) AS MF006,MF007,MF017,MF018 FROM BOMMF
+            WHERE MF001 = '{0}' AND MF002 = '{1}' AND MF004 = '{2}'
+            ORDER BY MF003
+            """
+        s = s.format(pdno, '01', '2004') # 製程代號 2004 為研發採購單價
+        df = pd.read_sql(s, self.cn)
+
+        # print(len(df.index))
+        if len(df.index) == 0:
+            # no data
+            return (0, '','','')
+        else:
+            return (df.iloc[0]['MF018'], df.iloc[0]['MF017'], df.iloc[0]['MF006'], df.iloc[0]['MF007'])
 
     def stmk_to_df(self):
         # 標準廠商途程單價
@@ -173,7 +191,7 @@ class db_yst(): #讀取excel 單一零件
     #         FROM MOCTI
     #             LEFT JOIN MOCTH ON TI001=TH001 AND TI002=TH002
     #         WHERE
-    #             TI004 = {0} AND 
+    #             TI004 = {0} AND
     #             TI015 = {1}
     #         """
     #     s = s.format(pdno)
@@ -206,7 +224,7 @@ class db_yst(): #讀取excel 單一零件
 
     def get_puilast_to_df(self, pdno, last_time):
         # 品號採購進貨 最後新進貨N筆 的供應商清單  (進貨 非 採購)
-        # pdno: 品號(TH004) 
+        # pdno: 品號(TH004)
         # last_time :進貨N筆
         # TG005       MA002
         # 供應商代號  簡稱
@@ -230,7 +248,7 @@ class db_yst(): #讀取excel 單一零件
         # MA001,  MA002, MA003,  MA004,   MA005,  MA012
         # 品號 製程代號 廠商代號 計價單位 加工單價   生效日
         s = """
-        SELECT TOP 1 
+        SELECT TOP 1
             -- RTRIM(MA001) AS MA001,MA002,MA003,RTRIM(MA004) AS MA004,MA005,MA012
             RTRIM(MA004) AS MA004,MA005
         FROM MOCMA
@@ -239,7 +257,7 @@ class db_yst(): #讀取excel 單一零件
             MA002 = '{1}' AND --製程代號
             MA003 = '{2}' AND --廠商代號
             MA012 <= '{3}'  --已生效
-        ORDER BY MA012 DESC 
+        ORDER BY MA012 DESC
         """
         s = s.format(pdno, ma002, ma003, ma012)
         df = pd.read_sql(s, self.cn) #轉pd
@@ -248,17 +266,17 @@ class db_yst(): #讀取excel 單一零件
     def get_pmb_to_dic(self, pdno, mb002, mb014):
         # 取最新一筆採購計價資料 (定位為事先核定)
         # 相對進貨單價(事後確定)
-        # MB001,  MB002, MB003, MB004, MB011,  MB014 
+        # MB001,  MB002, MB003, MB004, MB011,  MB014
         # 品號  廠商代號 幣別  計價單位 採購單價 生效日
         s = """
-        SELECT TOP 1 
+        SELECT TOP 1
             RTRIM(MB004) AS MB004,MB011
         FROM PURMB
         WHERE
             MB001 = '{0}' AND --品號
             MB002 = '{1}' AND --廠商代號
             MB014 <= '{2}'  --已生效
-        ORDER BY MB014 DESC 
+        ORDER BY MB014 DESC
         """
         s = s.format(pdno, mb002, mb014)
         df = pd.read_sql(s, self.cn) #轉pd
@@ -274,7 +292,7 @@ class db_yst(): #讀取excel 單一零件
     #     FROM SFCTA
     #         LEFT JOIN CMSMW ON SFCTA.TA004 = CMSMW.MW001
 
-    #     WHERE 
+    #     WHERE
     #         TA001 = '5101' AND
     #         TA002 = '20220418001'
     #     ORDER BY TA003
@@ -290,11 +308,11 @@ class db_yst(): #讀取excel 單一零件
     #     (SELECT MA001, MA002 FROM PURMA)
     #     """
     #     df = pd.read_sql(s, self.cn) #轉pd
-    #     return df if len(df.index) > 0 else None        
+    #     return df if len(df.index) > 0 else None
 
     # def test_df(self):
     #     s = """
-    #     SELECT 
+    #     SELECT
     #         TC001,TC002,TC003,TC047,TC048,TC049,
     #         TC023, md1.MD002 AS 移出部門,TC006 AS 移出工序,TC007 AS 移出製程,RTRIM(c1.MW002) AS cw1,
     #         TC041, md2.MD002 AS 移入部門,TC008,TC009,RTRIM(c2.MW002) AS cw2,
@@ -320,7 +338,7 @@ class db_yst(): #讀取excel 單一零件
     #         (SELECT MD001, MD002 FROM CMSMD) UNION (SELECT MA001, MA002 FROM PURMA)
     #         ) as md2 ON tc.TC041 = md2.MD001
 
-    #     WHERE 
+    #     WHERE
     #         TC004 = '5101' AND
     #         TC005 = '20220418001'
     #     ORDER BY TC006,TC002,TC003
@@ -365,6 +383,14 @@ def test1():
     print(df)
 
 
-
+def test2():
+    db = db_yst()
+    pdno = '3B01BLA05001'
+    rdpu, unit, rd_mf006, rd_mf007 = db.get_rdpu(pdno)
+    print(type(rdpu))
+    print(type(unit))
+    print(type(rd_mf006))
+    print(type(rd_mf007))
+    print(f'{pdno} 研發採購單價:{rdpu} 採購單位:{unit} 供應商代號:{rd_mf006} 簡稱:{rd_mf007}')
 if __name__ == '__main__':
-    test1()        
+    test2()
