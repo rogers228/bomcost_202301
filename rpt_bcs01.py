@@ -172,6 +172,7 @@ class Report_bcs01(tool_excel):
 
                     # 單價 =   製程單價(加工單價*單位換算)  * 用量換算率(用量/底數)
                     price_mol_den = float(mk_r['SS002']) * min(mol_den, 1) # 小於1時應換算(取最小且最大為1)
+
                     sn='單價';    write(crm, x_i[sn], price_mol_den, f11, alignment=ahr)
                     sn='工時批量'; write(crm, x_i[sn], mk_r[x_sqlcn[sn]], f11, alignment=ahr)
                     if mk_r['MF005'] == '1': # 自製
@@ -251,7 +252,9 @@ class Report_bcs01(tool_excel):
             nf = '0.##' if is_dec(price) else 'General'
             sn='總單價'; write(cr_pd, x_i[sn], price, f11, alignment=ahr, number_format=nf)
 
-            money=price*quantity
+            # money=price*quantity
+            # 2024/12/30 修正 金額 = 總單價*總用量(最小為1) (呼應單價的換算)
+            money = price * max(quantity,1)
             nf = '0.##' if is_dec(price) else 'General'
             sn='金額'; write(cr_pd, x_i[sn], money, f11, alignment=ahr, number_format=nf)
 
@@ -283,10 +286,10 @@ class Report_bcs01(tool_excel):
 def test1():
     fileName = 'bcs01' + '_' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + '.xlsx'
     # Report_bcs01(fileName, '3AAB1A3205')
-    # Report_bcs01(fileName, '4N0000308')
+    Report_bcs01(fileName, '4DD0030002')
     # Report_bcs01(fileName, '4B104018-01')
     # Report_bcs01(fileName, '5A090600003')
-    Report_bcs01(fileName, '6AE0300002')
+    # Report_bcs01(fileName, '6AE0300002')
     # Report_bcs01(fileName, '6EB0028')
     # Report_bcs01(fileName, '6AA09N180100004', True)
     # Report_bcs01(fileName, '8CC006', True)

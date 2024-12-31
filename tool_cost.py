@@ -645,6 +645,11 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
                 if r['MF006'].strip() in self.lis_puk: # 供應商代號在禁止交易名單內
                     em4['mk_i']=i; em4['mssage']= f"{r['MF007']}禁止交易"
 
+                # debug
+                # print('debug pdno:', pdno)
+                # print('debug f_ss001:', f_ss001)
+                # print('debug f_ss002:', f_ss002)
+
             #  type object to numeric
             df_new['SS001'] = pd.to_numeric(df_new['SS001'], errors='coerce')
             df_new['SS002'] = pd.to_numeric(df_new['SS002'], errors='coerce')
@@ -677,10 +682,10 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
 
         # debug
         # for k, v in dic_all_new.items():
-        #     # print(k)
-        #     # df = v[['MF001','MW002','MF017','MF018','MF023','SS001','SS002','SS031']]
-        #     df = v[['MF001','MW002','MF017','MF006','MF004','SS031']]
-        #     print(df)
+            # print(k)
+            # df = v[['MF001','MW002','MF017','MF018','MF023','SS001','SS002','SS031']]
+            # df = v[['MF001','MW002','MF017','MF006','MF004','SS031']]
+            # print(df)
 
     def comp_3(self): # 檢查資料異常
         info = self.error_information # 異常信息
@@ -738,8 +743,8 @@ class COST(): # 基於bom 與 製程bmk 合併產生出 cost data
 def test1():
     # bom = COST('3AAB1A3205')
     # bom = COST('3B01ABA05150')
-    bom = COST('4A602060')
-    # print(bom)
+    bom = COST('4DD0030002')
+
     # bom = COST('5A160600033')
     # bom = COST('6AA09N180100004', pump_lock = True)
     # bom = COST('6AE0300002', pump_lock = True)
@@ -749,13 +754,13 @@ def test1():
     # dic = bom.dlookdic_pdpu('3B01ABA05150') # 找採購最新進貨
     # print(dic)
 
-    dic_err=bom.error_dic()
-    print(dic_err)
+    # dic_err=bom.error_dic()
+    # print(dic_err)
 
     # for pdno, e in dic_err['err13'].items():
-    #     print(pdno)
+    #     print(pdno)self.df_pkg
     #     print(e)
-    # bom = COST('4A428003')
+    # bom = COST('4DD0030002')
     # lis = bom.group_to_list()
     # print(lis)
 

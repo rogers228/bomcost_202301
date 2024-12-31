@@ -270,8 +270,8 @@ class BOM(): # 產生bom to_df() 方法
                     # arr_bottom.append(r['gid']) # 本階層 大於等於 下一筆的階層 必為最下階
 
 def test1():
-    bom = BOM('3B01ABA05150', pump_lock = True)
-    # bom = BOM('4B101050')
+    # bom = BOM('3B01ABA05150', pump_lock = True)
+    bom = BOM('4DD0030002')
     # bom = BOM('5A010100005')
     # bom = BOM('6AA03FA001EL1A01')
     # bom = BOM('6AA09N180100004', pump_lock = True)
