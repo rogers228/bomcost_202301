@@ -31,8 +31,12 @@ def test1():
     # ftl.ini_write('sav07','456')
     # print(ftl.ini_get('sav07'))
     # ftl.clear()
+
+def test2():
+    print(os.path.expanduser(r'~\Documents'))
+
 if __name__ == '__main__':
-    test1()
+    test2()
 
 
 

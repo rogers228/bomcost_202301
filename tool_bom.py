@@ -143,7 +143,7 @@ class BOM(): # 產生bom to_df() 方法
             }
         self.df_bom = self.df_bom.append(data_row, ignore_index=True) #新增首筆
 
-    def generator(self): #建立BOM架構
+    def generator(self): # 建立BOM架構
         while any(self.df_bom['bom_extend'].tolist()): # 需要展泵
             if self.ci == 2000:
                 print('迴圈過多')
@@ -151,7 +151,7 @@ class BOM(): # 產生bom to_df() 方法
             self.circul_bom()
             self.ci += 1
 
-    def circul_bom(self): #迴圈取得BOM架構
+    def circul_bom(self): # 迴圈取得BOM架構
         df = self.df_bom.copy() # 複製來遍歷
         for i, r in df.iterrows():
             if r['bom_extend'] == True: # 需要展階
